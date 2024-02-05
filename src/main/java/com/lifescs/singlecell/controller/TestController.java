@@ -39,10 +39,8 @@ public class TestController {
     private String inputDir;
     private ExperimentService experimentService;
     private Logger logger = LoggerFactory.getLogger(TestController.class);
-    private ExperimentTestDao testDao;
 
-    public TestController(ExperimentService experimentService, ExperimentTestDao testDao) {
-        this.testDao = testDao;
+    public TestController(ExperimentService experimentService) {
         this.experimentService = experimentService;
         this.logger = LoggerFactory.getLogger(TestController.class);
     }
