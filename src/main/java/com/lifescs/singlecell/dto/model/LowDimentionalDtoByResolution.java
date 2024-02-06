@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class LowDimentionalDtoByResolution {
 
-    private String barcodes;
+    private List<String> barcodes;
     private List<Double> spring1;
     private List<Double> spring2;
     private List<Double> pca1;
@@ -19,6 +19,6 @@ public class LowDimentionalDtoByResolution {
     private List<Double> tsne1;
     private List<Double> tsne2;
     private List<String> samples;
-    private List<List<ResolutionDto>> resolutions;
+    private List<String> clusterNames;
 
 }

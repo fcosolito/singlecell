@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByResolution;
+import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.service.PlotService;
 
 @RestController
@@ -22,11 +24,16 @@ public class PlotDtoController {
         this.logger = LoggerFactory.getLogger(PlotDtoController.class);
     }
 
-    // @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/lowdim")
     public LowDimentionalDtoByResolution getDto() {
-        LowDimentionalDtoByResolution dto = plotService.getLowDimentionalDtoByResolution("exp1");
-        logger.info(dto.getResolutions().toString());
+        Experiment testExperiment = new Experiment("Test experiment");
+        testExperiment.setId("exp1");
+        Resolution testResolution = new Resolution();
+        testResolution.setId("exp1cluster_0.20");
+        LowDimentionalDtoByResolution dto = plotService.getLowDimentionalDtoByResolution(testExperiment,
+                testResolution);
+        // logger.info(dto.getClusterNames().toString());
         return dto;
     }
 }

@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.dao.model.PlotDao;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByResolution;
+import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.Resolution;
 
 @Service
 public class PlotService {
@@ -17,7 +19,7 @@ public class PlotService {
         this.logger = LoggerFactory.getLogger(PlotService.class);
     }
 
-    public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution(String experimentId) {
-        return plotDao.getLowDimentionalDtoByResolution(experimentId);
+    public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution(Experiment e, Resolution r) {
+        return plotDao.getLowDimentionalDtoByResolution2(e, r);
     }
 }
