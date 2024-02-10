@@ -7,33 +7,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.management.RuntimeErrorException;
 
-import org.apache.commons.collections4.MultiValuedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.dao.input.CellMetadataInputDao;
 import com.lifescs.singlecell.dao.input.GeneExpressionInputMapDao;
-import com.lifescs.singlecell.dao.file.GeneExpressionMapDao;
 import com.lifescs.singlecell.dao.input.GeneExpressionMatrixInputDao;
 import com.lifescs.singlecell.dao.input.MarkerGeneInputDao;
 import com.lifescs.singlecell.dao.model.ExperimentDao;
 import com.lifescs.singlecell.dto.csv.CellMetadataInputDto;
-import com.lifescs.singlecell.dto.csv.GeneExpressionDto;
 import com.lifescs.singlecell.dto.csv.GeneExpressionMatrixInputDto;
-import com.lifescs.singlecell.dto.csv.GeneMapDto;
 import com.lifescs.singlecell.dto.csv.MarkerGeneInputDto;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
-import com.lifescs.singlecell.model.GeneExpressionList;
-import com.lifescs.singlecell.model.GeneExpressionMap;
 import com.lifescs.singlecell.model.MarkerGene;
 import com.lifescs.singlecell.model.Project;
 import com.lifescs.singlecell.model.Resolution;
@@ -70,8 +62,8 @@ public class ExperimentService {
     public void loadGeneExpressions(Project p, Experiment e) throws Exception {
         GeneExpressionMatrixInputDto dto = matrixDao.readMatrix(p, e);
         Map<Integer, String> geneMap = matrixDao.readGeneMapping(p, e);
-        Map<Integer, GeneExpressionList> cellMap = e.getCells().stream()
-                .collect(Collectors.toMap(c -> c.getLocalId(), c -> c.getGeneExpressions()));
+        Map<Integer, Cell> cellMap = e.getCells().stream()
+                .collect(Collectors.toMap(c -> c.getLocalId(), c -> c));
         dto.getGeneExpressionList().stream().forEach(d -> {
             GeneExpression ge = new GeneExpression(geneMap.get(d.getGeneId()), d.getExpression());
             cellMap.get(d.getCellId()).getGeneExpressions().add(ge);

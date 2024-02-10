@@ -14,7 +14,7 @@ import com.lifescs.singlecell.model.Sample;
 import com.lifescs.singlecell.repository.CellRepository;
 import com.lifescs.singlecell.repository.ClusterRepository;
 import com.lifescs.singlecell.repository.ExperimentRepository;
-import com.lifescs.singlecell.repository.GeneExpressionListRepository;
+import com.lifescs.singlecell.repository.GeneExpressionRepository;
 import com.lifescs.singlecell.repository.ResolutionRepository;
 import com.lifescs.singlecell.repository.SampleRepository;
 
@@ -25,19 +25,19 @@ public class ExperimentDao {
     private CellRepository cellRepository;
     private ResolutionRepository resolutionRepository;
     private ClusterRepository clusterRepository;
-    private GeneExpressionListRepository geneExpressionListRepository;
+    private GeneExpressionRepository geneExpressionRepository;
     private Logger logger;
 
     public ExperimentDao(SampleRepository sampleRepository, ExperimentRepository experimentRepository,
             CellRepository cellRepository, ResolutionRepository resolutionRepository,
-            ClusterRepository clusterRepository, GeneExpressionListRepository geneExpressionListRepository) {
+            ClusterRepository clusterRepository, GeneExpressionRepository geneExpressionRepository) {
         this.logger = LoggerFactory.getLogger(ExperimentDao.class);
         this.sampleRepository = sampleRepository;
         this.experimentRepository = experimentRepository;
         this.cellRepository = cellRepository;
         this.resolutionRepository = resolutionRepository;
         this.clusterRepository = clusterRepository;
-        this.geneExpressionListRepository = geneExpressionListRepository;
+        this.geneExpressionRepository = geneExpressionRepository;
     }
 
     public Experiment saveExperimentDeep(Experiment e) {
@@ -65,7 +65,7 @@ public class ExperimentDao {
 
     public Cell saveCell(Cell c) {
 
-        geneExpressionListRepository.save(c.getGeneExpressions());
+        geneExpressionRepository.saveAll(c.getGeneExpressions());
         return cellRepository.save(c);
     }
 

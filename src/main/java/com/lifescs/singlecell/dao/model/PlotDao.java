@@ -32,6 +32,7 @@ public class PlotDao {
         private MongoTemplate mongoTemplate;
 
         public LowDimentionalDtoByGene getLowDimentionalByGeneCodes(String experimentId, List<String> geneCodes) {
+                // If List is empty create a simpler query just for the samples and coordinates
                 LookupOperation lookupCell = LookupOperation.newLookup()
                                 .from("cell")
                                 .localField("cells")
@@ -55,7 +56,7 @@ public class PlotDao {
                 UnwindOperation unwindCells = Aggregation.unwind("$cells");
                 UnwindOperation unwindCellInfo = Aggregation.unwind("$cellInfo");
                 UnwindOperation unwindGeneExpressionInfo = Aggregation.unwind("$geneExpressionInfo");
-                UnwindOperation unwindSamples = Aggregation.unwind("$sampleInfo");
+                UnwindOperation unwindSampleInfo = Aggregation.unwind("$sampleInfo");
 
                 ProjectionOperation project = Aggregation.project("_id")
                                 .and("cellInfo.barcode").as("barcodes")
@@ -110,7 +111,7 @@ public class PlotDao {
                                 lookupGeneExpression,
                                 unwindGeneExpressionInfo,
                                 lookupSample,
-                                unwindSamples,
+                                unwindSampleInfo,
                                 project,
                                 projectSum,
                                 group);
@@ -126,118 +127,145 @@ public class PlotDao {
                 return resultWithAverage;
         }
 
-        public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution(String experimentId) {
-
-                MatchOperation matchExperiment = Aggregation.match(Criteria.where("_id").is(experimentId));
-                UnwindOperation unwindCells = Aggregation.unwind("$cells");
-                UnwindOperation unwindCellinfo = Aggregation.unwind("$cellInfo");
-                UnwindOperation unwindClusterInfo = Aggregation.unwind("$clusterInfo");
-                UnwindOperation unwindResolutionInfo = Aggregation.unwind("$resolutionInfo");
-
-                LookupOperation lookupCell = LookupOperation.newLookup()
-                                .from("cell")
-                                .localField("cells")
-                                .foreignField("_id")
-                                .as("cellInfo");
-
-                LookupOperation lookupCluster = LookupOperation.newLookup()
-                                .from("cluster")
-                                .localField("cellInfo.clusters")
-                                .foreignField("_id")
-                                .as("clusterInfo");
-
-                LookupOperation lookupResolution = LookupOperation.newLookup()
-                                .from("resolution")
-                                .localField("clusterInfo.resolution")
-                                .foreignField("_id")
-                                .as("resolutionInfo");
-
-                ProjectionOperation projectByCell = Aggregation.project()
-                                .and("cellInfo.barcode").as("barcode")
-                                .and("cellInfo.spring1").as("spring1")
-                                .and("cellInfo.spring2").as("spring2")
-                                .and("cellInfo.umap1").as("umap1")
-                                .and("cellInfo.umap2").as("umap2")
-                                .and("cellInfo.pca1").as("pca1")
-                                .and("cellInfo.pca2").as("pca2")
-                                .and("cellInfo.tsne1").as("tsne1")
-                                .and("cellInfo.tsne2").as("tsne2")
-                                .and("resolutionInfo.name").as("resolutionName")
-                                .and("clusterInfo.name").as("clusterName");
-
-                ProjectionOperation projectByExperiment = Aggregation.project()
-                                .and("AuxId").asLiteral().as("experimentId")
-                                .and("spring1").as("spring1")
-                                .and("spring2").as("spring2")
-                                .and("umap1").as("umap1")
-                                .and("umap2").as("umap2")
-                                .and("pca1").as("pca1")
-                                .and("pca2").as("pca2")
-                                .and("tsne1").as("tsne1")
-                                .and("tsne2").as("tsne2")
-                                .and("_id").as("barcode")
-                                .and("resolutions").as("resolutions");
-
-                GroupOperation groupByCell = Aggregation.group("barcode")
-                                .first("spring1").as("spring1")
-                                .first("spring2").as("spring2")
-                                .first("umap1").as("umap1")
-                                .first("umap2").as("umap2")
-                                .first("pca1").as("pca1")
-                                .first("pca2").as("pca2")
-                                .first("tsne1").as("tsne1")
-                                .first("tsne2").as("tsne2")
-                                .push(
-                                                new BasicDBObject("resolutionName", "$resolutionName")
-                                                                .append("clusterName", "$clusterName"))
-                                .as("resolutions");
-
-                GroupOperation groupByExperiment = Aggregation.group("experimentId")
-                                .push("barcode").as("barcodes")
-                                .push("spring1").as("spring1")
-                                .push("spring2").as("spring2")
-                                .push("umap1").as("umap1")
-                                .push("umap2").as("umap2")
-                                .push("pca1").as("pca1")
-                                .push("pca2").as("pca2")
-                                .push("tsne1").as("tsne1")
-                                .push("tsne2").as("tsne2")
-                                .push("resolutions").as("resolutions");
-
-                Aggregation aggregation = Aggregation.newAggregation(
-                                matchExperiment,
-                                unwindCells,
-                                lookupCell,
-                                unwindCellinfo,
-                                lookupCluster,
-                                unwindClusterInfo,
-                                lookupResolution,
-                                unwindResolutionInfo,
-                                projectByCell,
-                                groupByCell,
-                                projectByExperiment,
-                                groupByExperiment);
-
-                List<LowDimentionalDtoByResolution> result = mongoTemplate
-                                .aggregate(aggregation, "experiment", LowDimentionalDtoByResolution.class)
-                                .getMappedResults();
-
-                return result.isEmpty() ? null : result.get(0);
-
-                // for each cell get the clusters -> get their resolutions -> do not unwind so
-                // each cell has an array of resolutions, project only the resolution name in
-                // the
-                // nested object and find a way to get the cluster name inside the resolution
-                // object
-                // group by cell and push each resolution object into an array so:
-                // resolutions: [{ resName: "aaa", clusName: "bbb" }, {...}]
-        }
-
+        /*
+         * public HeatmapDto getHeatmapDto(Experiment e, Resolution r, Double
+         * foldChange, Integer maxNumberOfGenes) {
+         * 
+         * Aggregation markersAggregation = Aggregation.newAggregation(
+         * matchExperiment,
+         * lookupResolution,
+         * unwindResolutionInfo, // Maybe this is not needed
+         * lookupCluster,
+         * unwindClusterInfo,
+         * projectFilterMarkers,
+         * groupByExperiment // Should return a list of geneCodes for each cluster
+         * // Throw ERROR: no markers above foldChange
+         * );
+         * 
+         * Aggregation heatmapAggregation = Aggregation.newAggregation(
+         * matchExperiment,
+         * lookupCells,
+         * unwindCellInfo,
+         * lookupGeneExpression,
+         * unwindGeneExpressionInfo);
+         * }
+         * 
+         * public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution(String
+         * experimentId) {
+         * 
+         * MatchOperation matchExperiment =
+         * Aggregation.match(Criteria.where("_id").is(experimentId));
+         * UnwindOperation unwindCells = Aggregation.unwind("$cells");
+         * UnwindOperation unwindCellinfo = Aggregation.unwind("$cellInfo");
+         * UnwindOperation unwindClusterInfo = Aggregation.unwind("$clusterInfo");
+         * UnwindOperation unwindResolutionInfo = Aggregation.unwind("$resolutionInfo");
+         * 
+         * LookupOperation lookupCell = LookupOperation.newLookup()
+         * .from("cell")
+         * .localField("cells")
+         * .foreignField("_id")
+         * .as("cellInfo");
+         * 
+         * LookupOperation lookupCluster = LookupOperation.newLookup()
+         * .from("cluster")
+         * .localField("cellInfo.clusters")
+         * .foreignField("_id")
+         * .as("clusterInfo");
+         * 
+         * LookupOperation lookupResolution = LookupOperation.newLookup()
+         * .from("resolution")
+         * .localField("clusterInfo.resolution")
+         * .foreignField("_id")
+         * .as("resolutionInfo");
+         * 
+         * ProjectionOperation projectByCell = Aggregation.project()
+         * .and("cellInfo.barcode").as("barcode")
+         * .and("cellInfo.spring1").as("spring1")
+         * .and("cellInfo.spring2").as("spring2")
+         * .and("cellInfo.umap1").as("umap1")
+         * .and("cellInfo.umap2").as("umap2")
+         * .and("cellInfo.pca1").as("pca1")
+         * .and("cellInfo.pca2").as("pca2")
+         * .and("cellInfo.tsne1").as("tsne1")
+         * .and("cellInfo.tsne2").as("tsne2")
+         * .and("resolutionInfo.name").as("resolutionName")
+         * .and("clusterInfo.name").as("clusterName");
+         * 
+         * ProjectionOperation projectByExperiment = Aggregation.project()
+         * .and("AuxId").asLiteral().as("experimentId")
+         * .and("spring1").as("spring1")
+         * .and("spring2").as("spring2")
+         * .and("umap1").as("umap1")
+         * .and("umap2").as("umap2")
+         * .and("pca1").as("pca1")
+         * .and("pca2").as("pca2")
+         * .and("tsne1").as("tsne1")
+         * .and("tsne2").as("tsne2")
+         * .and("_id").as("barcode")
+         * .and("resolutions").as("resolutions");
+         * 
+         * GroupOperation groupByCell = Aggregation.group("barcode")
+         * .first("spring1").as("spring1")
+         * .first("spring2").as("spring2")
+         * .first("umap1").as("umap1")
+         * .first("umap2").as("umap2")
+         * .first("pca1").as("pca1")
+         * .first("pca2").as("pca2")
+         * .first("tsne1").as("tsne1")
+         * .first("tsne2").as("tsne2")
+         * .push(
+         * new BasicDBObject("resolutionName", "$resolutionName")
+         * .append("clusterName", "$clusterName"))
+         * .as("resolutions");
+         * 
+         * GroupOperation groupByExperiment = Aggregation.group("experimentId")
+         * .push("barcode").as("barcodes")
+         * .push("spring1").as("spring1")
+         * .push("spring2").as("spring2")
+         * .push("umap1").as("umap1")
+         * .push("umap2").as("umap2")
+         * .push("pca1").as("pca1")
+         * .push("pca2").as("pca2")
+         * .push("tsne1").as("tsne1")
+         * .push("tsne2").as("tsne2")
+         * .push("resolutions").as("resolutions");
+         * 
+         * Aggregation aggregation = Aggregation.newAggregation(
+         * matchExperiment,
+         * unwindCells,
+         * lookupCell,
+         * unwindCellinfo,
+         * lookupCluster,
+         * unwindClusterInfo,
+         * lookupResolution,
+         * unwindResolutionInfo,
+         * projectByCell,
+         * groupByCell,
+         * projectByExperiment,
+         * groupByExperiment);
+         * 
+         * List<LowDimentionalDtoByResolution> result = mongoTemplate
+         * .aggregate(aggregation, "experiment", LowDimentionalDtoByResolution.class)
+         * .getMappedResults();
+         * 
+         * return result.isEmpty() ? null : result.get(0);
+         * 
+         * // for each cell get the clusters -> get their resolutions -> do not unwind
+         * so
+         * // each cell has an array of resolutions, project only the resolution name in
+         * // the
+         * // nested object and find a way to get the cluster name inside the resolution
+         * // object
+         * // group by cell and push each resolution object into an array so:
+         * // resolutions: [{ resName: "aaa", clusName: "bbb" }, {...}]
+         * }
+         */
         public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution2(Experiment e, Resolution r) {
                 MatchOperation matchExperiment = Aggregation.match(Criteria.where("_id").is(e.getId()));
                 UnwindOperation unwindCells = Aggregation.unwind("$cells");
                 UnwindOperation unwindCellInfo = Aggregation.unwind("$cellInfo");
                 UnwindOperation unwindClusterInfo = Aggregation.unwind("$clusterInfo");
+                UnwindOperation unwindSampleInfo = Aggregation.unwind("$sampleInfo");
 
                 LookupOperation lookupCell = LookupOperation.newLookup()
                                 .from("cell")
@@ -251,8 +279,15 @@ public class PlotDao {
                                 .foreignField("_id")
                                 .as("clusterInfo");
 
+                LookupOperation lookupSample = LookupOperation.newLookup()
+                                .from("sample")
+                                .localField("cellInfo.sample")
+                                .foreignField("_id")
+                                .as("sampleInfo");
+
                 GroupOperation groupByExperiment = Aggregation.group("_id")
                                 .push("barcode").as("barcodes")
+                                .push("sampleName").as("samples")
                                 .push("spring1").as("spring1")
                                 .push("spring2").as("spring2")
                                 .push("umap1").as("umap1")
@@ -269,6 +304,7 @@ public class PlotDao {
                 // always return an element
                 ProjectionOperation projectFilterCluster = Aggregation.project("_id")
                                 .and("cellInfo.barcode").as("barcode")
+                                .and("sampleInfo.name").as("sampleName")
                                 .and("cellInfo.spring1").as("spring1")
                                 .and("cellInfo.spring2").as("spring2")
                                 .and("cellInfo.umap1").as("umap1")
@@ -288,6 +324,8 @@ public class PlotDao {
                                 unwindCells,
                                 lookupCell,
                                 unwindCellInfo,
+                                lookupSample,
+                                unwindSampleInfo,
                                 lookupCluster,
                                 projectFilterCluster, // only one cluster per cell left
                                 unwindClusterInfo,
