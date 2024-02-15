@@ -56,19 +56,18 @@ public class TestController {
 
         // Read from input files
         long mid = System.nanoTime();
-        // List<String> searchList = new ArrayList<>();
-        // searchList.add("Tram1");
-        // searchList.add("Vcpip1");
+        List<String> searchList = new ArrayList<>();
+        searchList.add("Tram1");
+        searchList.add("Vcpip1");
         // List<LowDimentionalDto> lowDto = testDao.getLowDimentionalDto(experiment,
         // searchList);
-        // LowDimentionalDto lowDto = testDao.performAggregation(experiment.getId(),
-        // searchList);
-        // logger.info(lowDto.getCellIds().toString());
-        experimentService.loadCellsFromMetadataFile(project, experiment);
-        experimentService.loadMarkersFromFile(project, experiment);
-        experimentService.loadGeneExpressions(project, experiment);
+        LowDimentionalDto lowDto = testDao.performAggregation(experiment.getId(), searchList);
+        logger.info(lowDto.getCellIds().toString());
+        // experimentService.loadCellsFromMetadataFile(project, experiment);
+        // experimentService.loadMarkersFromFile(project, experiment);
+        // experimentService.loadGeneExpressions(project, experiment);
         // Save to database (recursive)
-        experimentService.saveExperimentDeep(experiment);
+        // experimentService.saveExperimentDeep(experiment);
         // long start = System.nanoTime();
         // experiment = experimentService.findExperimentById("exp1").get();
         // List<ExperimentTestDto> dtos = testDao.getDto();
@@ -88,6 +87,15 @@ public class TestController {
         // experimentService.saveGeneExpressionMap(null, experiment);
 
         return "TestView";
+    }
+
+    // Origins from where the requests are made
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/experiment")
+    public ExperimentTestDto getExperiment() {
+        List<ExperimentTestDto> dtos = testDao.getDto();
+        logger.info("Experiment requested");
+        return dtos.get(0);
     }
 
 }

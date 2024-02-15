@@ -29,7 +29,7 @@ public class Cell {
     @DocumentReference
     private Sample sample;
     @DocumentReference(lazy = true)
-    private List<GeneExpression> geneExpressions;
+    private GeneExpressionList geneExpressions;
     @Field
     private Double percentOfMitochondrialGenes;
     @Field
@@ -61,7 +61,7 @@ public class Cell {
 
     public Cell() {
         this.clusters = new ArrayList<>();
-        this.geneExpressions = new ArrayList<>();
+        this.geneExpressions = new GeneExpressionList();
     }
 
     @Override
