@@ -11,4 +11,7 @@ public class GeneExpression {
     private String geneCode;
     private Double expression;
 
+    public String toString() {
+        return "GE: " + geneCode + ", " + expression.toString();
+    }
 }

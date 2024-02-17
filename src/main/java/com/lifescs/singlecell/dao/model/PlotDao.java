@@ -1,6 +1,5 @@
 package com.lifescs.singlecell.dao.model;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -8,7 +7,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.AccumulatorOperators;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
-import org.springframework.data.mongodb.core.aggregation.BooleanOperators;
 import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.LookupOperation;
@@ -26,12 +24,13 @@ import com.mongodb.BasicDBObject;
 
 import lombok.AllArgsConstructor;
 
-@AllArgsConstructor
 @Component
+@AllArgsConstructor
 public class PlotDao {
         private MongoTemplate mongoTemplate;
 
-        public LowDimentionalDtoByGene getLowDimentionalByGeneCodes(String experimentId, List<String> geneCodes) {
+        public LowDimentionalDtoByGene getLowDimentionalByGeneCodes(Experiment e, List<String> geneCodes) {
+                String experimentId = e.getId();
                 LookupOperation lookupCell = LookupOperation.newLookup()
                                 .from("cell")
                                 .localField("cells")
@@ -71,20 +70,20 @@ public class PlotDao {
                                 .and(ArrayOperators.Filter.filter("geneExpressionInfo.geneExpressions")
                                                 .as("geneExp")
                                                 .by(ArrayOperators.In.arrayOf(geneCodes)
-                                                                .containsValue("geneExp.geneCode")))
+                                                                .containsValue("$$geneExp.geneCode")))
                                 .as("geneValues");
 
                 ProjectionOperation projectSum = Aggregation.project("_id")
-                                .and("barcode").as("barcode")
+                                .and("barcodes").as("barcode")
                                 .and("sampleName").as("sampleName")
                                 .and("spring1").as("spring1")
                                 .and("spring2").as("spring2")
                                 .and("tsne1").as("tsne1")
                                 .and("tsne2").as("tsne2")
-                                .and("cellInfo.umap1").as("umap1")
-                                .and("cellInfo.umap2").as("umap2")
-                                .and("cellInfo.pca1").as("pca1")
-                                .and("cellInfo.pca2").as("pca2")
+                                .and("umap1").as("umap1")
+                                .and("umap2").as("umap2")
+                                .and("pca1").as("pca1")
+                                .and("pca2").as("pca2")
                                 .and(AccumulatorOperators.Sum.sumOf("geneValues.expression"))
                                 .as("sum_of_genes");
 

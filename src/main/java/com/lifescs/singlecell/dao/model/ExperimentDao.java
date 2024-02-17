@@ -2,8 +2,6 @@ package com.lifescs.singlecell.dao.model;
 
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.model.Cell;
@@ -15,10 +13,16 @@ import com.lifescs.singlecell.repository.CellRepository;
 import com.lifescs.singlecell.repository.ClusterRepository;
 import com.lifescs.singlecell.repository.ExperimentRepository;
 import com.lifescs.singlecell.repository.GeneExpressionListRepository;
+import com.lifescs.singlecell.repository.MarkerExpressionListRepository;
 import com.lifescs.singlecell.repository.ResolutionRepository;
 import com.lifescs.singlecell.repository.SampleRepository;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Component
+@AllArgsConstructor
+@Slf4j
 public class ExperimentDao {
     private SampleRepository sampleRepository;
     private ExperimentRepository experimentRepository;
@@ -26,30 +30,18 @@ public class ExperimentDao {
     private ResolutionRepository resolutionRepository;
     private ClusterRepository clusterRepository;
     private GeneExpressionListRepository geneExpressionListRepository;
-    private Logger logger;
-
-    public ExperimentDao(SampleRepository sampleRepository, ExperimentRepository experimentRepository,
-            CellRepository cellRepository, ResolutionRepository resolutionRepository,
-            ClusterRepository clusterRepository, GeneExpressionListRepository geneExpressionListRepository) {
-        this.logger = LoggerFactory.getLogger(ExperimentDao.class);
-        this.sampleRepository = sampleRepository;
-        this.experimentRepository = experimentRepository;
-        this.cellRepository = cellRepository;
-        this.resolutionRepository = resolutionRepository;
-        this.clusterRepository = clusterRepository;
-        this.geneExpressionListRepository = geneExpressionListRepository;
-    }
+    private MarkerExpressionListRepository markerExpressionListRepository;
 
     public Experiment saveExperimentDeep(Experiment e) {
         e.getResolutions().stream()
                 .forEach(r -> {
                     saveResolution(r);
-                    logger.info("Saving resolution: " + r.getId());
+                    log.info("Saving resolution: " + r.getId());
                 });
         e.getSamples().stream()
                 .forEach(s -> {
                     saveSample(s);
-                    logger.info("Saving sample: " + s.getId());
+                    log.info("Saving sample: " + s.getId());
                 });
         e.getCells().stream()
                 .forEach(c -> {
@@ -66,6 +58,7 @@ public class ExperimentDao {
     public Cell saveCell(Cell c) {
 
         geneExpressionListRepository.save(c.getGeneExpressions());
+        markerExpressionListRepository.save(c.getMarkerExpressions());
         return cellRepository.save(c);
     }
 

@@ -11,14 +11,13 @@ import com.lifescs.singlecell.mapper.PathMapper;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Project;
 
+import lombok.AllArgsConstructor;
+
 @Component
+@AllArgsConstructor
 public class CellMetadataInputDao extends CsvDao<CellMetadataInputDto> {
 
     private PathMapper pathMapper;
-
-    public CellMetadataInputDao(PathMapper pathMapper) {
-        this.pathMapper = pathMapper;
-    }
 
     public List<CellMetadataInputDto> readCSVToMetadataBeans(Project p, Experiment e) throws Exception {
         return readCSVToBeans(Path.of(pathMapper.metadataPath(p, e)),

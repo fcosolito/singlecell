@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.dto.csv.GeneExpressionDto;
@@ -19,21 +17,21 @@ import com.lifescs.singlecell.mapper.PathMapper;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Project;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 @Component
+@AllArgsConstructor
+@Slf4j
 public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
 
-    private Logger logger;
     private PathMapper pathMapper;
 
-    public GeneExpressionMatrixInputDao(PathMapper pathMapper) {
-        this.pathMapper = pathMapper;
-        this.logger = LoggerFactory.getLogger(GeneExpressionMatrixInputDao.class);
-    }
-
+    // Reads the .mtx matrix file into a dto, gets path from mapper
     public GeneExpressionMatrixInputDto readMatrix(Project p, Experiment e) throws Exception {
         GeneExpressionMatrixInputDto matrix = new GeneExpressionMatrixInputDto();
 
-        logger.info("Reading Matrix");
+        log.info("Reading Matrix file");
         try (BufferedReader bufferedReader = new BufferedReader(
                 new FileReader(pathMapper.geneExpressionMatrixPath(p, e)))) {
             String line = null;
@@ -63,13 +61,14 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
             }
             matrix.setGeneExpressionList(expressionList);
 
-            logger.info("Finished reading matrix");
+            log.info("Finished reading matrix");
             return matrix;
 
         }
 
     }
 
+    // Reads csv file with gene mappings (matrix column) -> (geneCode)
     public Map<Integer, String> readGeneMapping(Project p, Experiment e) throws Exception {
         List<GeneMapDto> geneList = readCSVToBeans(Path.of(pathMapper.geneMapPath(p, e)), GeneMapDto.class);
         return geneList.stream()
