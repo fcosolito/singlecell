@@ -28,4 +28,9 @@ public class Project {
         this.experiments = new ArrayList<>();
     }
 
+    public Project(String id) {
+        this.experiments = new ArrayList<>();
+        this.id = id;
+    }
+
 }

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.MarkerExpressionList;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.model.Sample;
 import com.lifescs.singlecell.repository.CellRepository;
@@ -29,9 +30,8 @@ public class ExperimentDao {
     private CellRepository cellRepository;
     private ResolutionRepository resolutionRepository;
     private ClusterRepository clusterRepository;
-    private GeneExpressionListRepository geneExpressionListRepository;
-    private MarkerExpressionListRepository markerExpressionListRepository;
 
+    // Does not save Cell expressions
     public Experiment saveExperimentDeep(Experiment e) {
         e.getResolutions().stream()
                 .forEach(r -> {
@@ -56,9 +56,6 @@ public class ExperimentDao {
     }
 
     public Cell saveCell(Cell c) {
-
-        geneExpressionListRepository.save(c.getGeneExpressions());
-        markerExpressionListRepository.save(c.getMarkerExpressions());
         return cellRepository.save(c);
     }
 

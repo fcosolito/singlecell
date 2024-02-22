@@ -1,13 +1,10 @@
 package com.lifescs.singlecell.model;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -28,10 +25,10 @@ public class Cell {
     private String barcode;
     @DocumentReference
     private Sample sample;
-    @DocumentReference(lazy = true)
-    private GeneExpressionList geneExpressions;
-    @DocumentReference(lazy = true)
-    private List<MarkerExpressionList> markerExpressions;
+    @Field
+    private ObjectId geneExpressionId;
+    @Field
+    private List<ObjectId> markerExpressionIds;
     @Field
     private Double percentOfMitochondrialGenes;
     @Field
@@ -58,18 +55,12 @@ public class Cell {
     private Double umap1;
     @Field
     private Double umap2;
-    @DocumentReference
-    private List<Cluster> clusters;
+    @Field
+    private List<String> clusterIds;
 
     public Cell() {
-        this.clusters = new ArrayList<>();
-        this.geneExpressions = new GeneExpressionList();
-        this.markerExpressions = new ArrayList<>();
-    }
-
-    @Override
-    public String toString() {
-        return "Cell: " + localId + ": (" + barcode + ") from sample: " + sample.getName();
+        this.clusterIds = new ArrayList<>();
+        this.markerExpressionIds = new ArrayList<>();
     }
 
 }

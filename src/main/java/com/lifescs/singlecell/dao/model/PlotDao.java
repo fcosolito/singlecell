@@ -16,6 +16,8 @@ import org.springframework.data.mongodb.core.aggregation.UnwindOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Component;
 
+import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
+import com.lifescs.singlecell.dto.model.HeatmapDto;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByGene;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByResolution;
 import com.lifescs.singlecell.model.Experiment;
@@ -299,5 +301,38 @@ public class PlotDao {
 
                 return result.isEmpty() ? null : result.get(0);
 
+        }
+
+        public List<HeatmapDto> getHeatmapDtos(Resolution r) {
+                MatchOperation matchCluster = Aggregation.match(Criteria.where("resolution").is(r.getId()));
+
+                LookupOperation lookupHeatmapCluster = LookupOperation.newLookup()
+                                .from("heatmapCluster")
+                                .localField("heatmapClusterId")
+                                .foreignField("_id")
+                                .as("heatmapInfo");
+
+                ProjectionOperation project = Aggregation.project("name", "markers")
+                                .and("heatmapInfo.buckets").as("buckets")
+                                .and("heatmapInfo.expressions").as("expressions");
+
+                UnwindOperation unwindExpressions = Aggregation.unwind("$expressions");
+                UnwindOperation unwindBuckets = Aggregation.unwind("$buckets");
+
+                Aggregation aggregation = Aggregation.newAggregation(
+                                matchCluster,
+                                lookupHeatmapCluster,
+                                project,
+                                unwindExpressions,
+                                unwindBuckets);
+
+                List<HeatmapDto> result = mongoTemplate
+                                .aggregate(aggregation, "cluster", HeatmapDto.class)
+                                .getMappedResults();
+
+                if (result.isEmpty())
+                        throw new NoObjectFoundException("No heatmap clusters found for resolution: " + r.getId());
+                else
+                        return result;
         }
 }

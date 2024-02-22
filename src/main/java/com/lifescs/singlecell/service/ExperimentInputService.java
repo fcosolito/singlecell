@@ -1,16 +1,19 @@
 package com.lifescs.singlecell.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.dao.input.CellMetadataInputDao;
 import com.lifescs.singlecell.dao.input.GeneExpressionMatrixInputDao;
 import com.lifescs.singlecell.dao.input.MarkerGeneInputDao;
+import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
 import com.lifescs.singlecell.dto.csv.CellMetadataInputDto;
 import com.lifescs.singlecell.dto.csv.GeneExpressionMatrixInputDto;
 import com.lifescs.singlecell.dto.csv.MarkerGeneInputDto;
@@ -30,6 +33,17 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @AllArgsConstructor
 @Slf4j
+// How to load experiment data:
+// Files must be stored inside a common directory named after the experiment id,
+// inside a directory
+// named after the project id
+// 1. Create a Project and an Experiment inside it
+// 2. Load cell metadata (This will also create resolutions, clusters and
+// samples)
+// 3. Load markers
+// 4. Load gene expressions
+// The loaded data can be saved to database between steps
+
 // Class for loading experiment data from files
 public class ExperimentInputService {
     private GeneExpressionMatrixInputDao matrixDao;
@@ -37,15 +51,28 @@ public class ExperimentInputService {
     private MarkerGeneInputDao markersDao;
 
     // Loads gene expressions for each cell in the experiment
-    public void loadGeneExpressions(Project p, Experiment e) throws Exception {
+    public List<GeneExpressionList> loadGeneExpressions(Project p, Experiment e) throws Exception {
         GeneExpressionMatrixInputDto dto = matrixDao.readMatrix(p, e);
+
+        // Map gene local id to gene code
         Map<Integer, String> geneMap = matrixDao.readGeneMapping(p, e);
-        Map<Integer, GeneExpressionList> cellMap = e.getCells().stream()
-                .collect(Collectors.toMap(c -> c.getLocalId(), c -> c.getGeneExpressions()));
+
+        // Create new expression lists for each cell
+        Map<Integer, GeneExpressionList> geneListMap = e.getCells().stream()
+                .collect(Collectors.toMap(c -> c.getLocalId(), c -> new GeneExpressionList(new ObjectId())));
+
+        // Load each gene expression form the matrix into a gene expression list
         dto.getGeneExpressionList().stream().forEach(d -> {
             GeneExpression ge = new GeneExpression(geneMap.get(d.getGeneId()), d.getExpression());
-            cellMap.get(d.getCellId()).getGeneExpressions().add(ge);
+            geneListMap.get(d.getCellId()).getGeneExpressions().add(ge);
         });
+
+        // Add the gene expression list to each cell
+        e.getCells().stream().forEach(c -> {
+            c.setGeneExpressionId(geneListMap.get(c.getLocalId()).getId());
+        });
+
+        return geneListMap.values().stream().toList();
 
     }
 
@@ -77,6 +104,9 @@ public class ExperimentInputService {
         cell.setNumberOfUMIs(dto.getNumberOfUMIs());
         cell.setNumberOfgenes(dto.getNumberOfGenes());
         cell.setPercentOfMitochondrialGenes(dto.getPercentOfMitochondrialGenes());
+
+        // Set cell clusters
+        List<Cluster> cs = new ArrayList<>();
         for (Entry<String, String> entry : dto.getClusters().entries()) {
             String resolutionName;
             String clusterName;
@@ -91,15 +121,11 @@ public class ExperimentInputService {
                     .filter(c -> c.getName().equals(clusterName))
                     .findFirst().orElseGet(() -> addCluster(clusterName, resolution));
             cluster.setResolution(resolution);
-            List<Cluster> cs = cell.getClusters();
             cs.add(cluster);
-            cell.setClusters(cs);
-
         }
+        cell.setClusterIds(cs.stream().map(c -> c.getId()).toList());
 
         experiment.getCells().add(cell);
-        log.info("Cell " + cell.getBarcode() + " loaded to experiment " + experiment.getName() + "sample: "
-                + cell.getSample().getName());
         return cell;
 
     }
@@ -108,12 +134,12 @@ public class ExperimentInputService {
     public void loadMarkers(Project p, Experiment e) throws Exception {
         log.info("Loading marker genes from file");
         for (MarkerGeneInputDto dto : markersDao.readCSVToMetadataBeans(p, e)) {
-            loadMarkerGene(dto, p, e);
+            loadMarkerGene(dto, e);
         }
     }
 
-    private MarkerGene loadMarkerGene(MarkerGeneInputDto dto, Project p, Experiment experiment)
-            throws RuntimeException {
+    private MarkerGene loadMarkerGene(MarkerGeneInputDto dto, Experiment experiment)
+            throws RuntimeException { // TODO add custom exceptions
         MarkerGene marker = new MarkerGene();
         marker.setGeneCode(dto.getGeneCode());
         marker.setFoldChange(dto.getFoldChange());
@@ -125,7 +151,7 @@ public class ExperimentInputService {
         Optional<Cluster> opCluster = experiment.getResolutions().stream()
                 .map(r -> r.getClusters()).flatMap(List::stream)
                 .filter(c -> c.getId()
-                        .equals((experiment.getId() + formatedResolutionId + dto.getCluster()))) // Clean hardcoded
+                        .equals((experiment.getId() + formatedResolutionId + dto.getCluster()))) // TODO Clean hardcoded
                                                                                                  // resolution name
                 .findFirst();
         if (opCluster.isPresent()) {

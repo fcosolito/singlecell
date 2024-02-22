@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.dao.model.PlotDao;
+import com.lifescs.singlecell.dto.model.HeatmapDto;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByGene;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByResolution;
 import com.lifescs.singlecell.model.Experiment;
@@ -25,5 +26,9 @@ public class PlotService {
 
     public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution(Experiment e, Resolution r) {
         return plotDao.getLowDimentionalDtoByResolution2(e, r);
+    }
+
+    public List<HeatmapDto> getHeatmapDtos(Resolution r) {
+        return plotDao.getHeatmapDtos(r);
     }
 }

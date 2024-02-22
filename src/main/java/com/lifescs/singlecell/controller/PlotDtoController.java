@@ -8,10 +8,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.lifescs.singlecell.dto.model.HeatmapDto;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByGene;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByResolution;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.MarkerExpressionList;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.service.ExperimentService;
 import com.lifescs.singlecell.service.PlotService;
@@ -64,22 +66,28 @@ public class PlotDtoController {
         Resolution resolution = new Resolution();
         resolution.setId("exp1cluster_0.20");
 
-        experimentService.setResolutionMarkerExpressions(e, resolution);
+        experimentService.addMarkerExpressionsForResolution(e, resolution);
 
         return;
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/test/cellmarkers")
-    public Cell testCellMarkers() {
-        Cell cell = new Cell();
-        cell.setId("exp11");
-        Resolution resolution = new Resolution();
-        resolution.setId("exp1cluster_0.20");
+    public void testCellMarkers() {
+        Experiment e = experimentService.findExperimentById("exp1").get();
+        Cell cell = experimentService.findCellById("exp11").get();
+        Resolution resolution = experimentService.findResolutionById("exp1cluster_0.20").get();
 
-        cell = experimentService.setCellMarkerExpressions(cell, resolution);
+        experimentService.addMarkerExpressionsForResolution(e, resolution);
 
-        return cell;
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/plots/heatmap")
+    public List<HeatmapDto> getHeatmap() {
+        Experiment e = experimentService.findExperimentById("exp1").get();
+        return plotService.getHeatmapDtos(e.getResolutions().get(3));
+
     }
 
     // @ExceptionHandler
