@@ -19,10 +19,8 @@ import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.GeneExpression;
-import com.lifescs.singlecell.model.MarkerExpressionList;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.repository.CellRepository;
-import com.lifescs.singlecell.repository.MarkerExpressionListRepository;
 
 import lombok.AllArgsConstructor;
 
@@ -31,7 +29,6 @@ import lombok.AllArgsConstructor;
 public class CellDao {
         private MongoTemplate mongoTemplate;
         private CellRepository cellRepository;
-        private MarkerExpressionListRepository markerExpressionListRepository;
 
         class MarkerExpressionResult {
                 private List<GeneExpression> expressionList;

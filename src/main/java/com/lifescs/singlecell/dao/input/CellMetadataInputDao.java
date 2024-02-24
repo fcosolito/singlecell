@@ -3,7 +3,6 @@ package com.lifescs.singlecell.dao.input;
 import java.nio.file.Path;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.dto.csv.CellMetadataInputDto;

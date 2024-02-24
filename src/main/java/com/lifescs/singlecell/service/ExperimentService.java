@@ -1,6 +1,5 @@
 package com.lifescs.singlecell.service;
 
-import com.lifescs.singlecell.model.GeneExpression;
 import com.lifescs.singlecell.model.GeneExpressionList;
 import com.lifescs.singlecell.model.HeatmapCluster;
 import com.lifescs.singlecell.model.HeatmapExpression;
@@ -20,13 +19,12 @@ import com.lifescs.singlecell.dao.model.ClusterDao;
 import com.lifescs.singlecell.dao.model.ExperimentDao;
 import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
 import com.lifescs.singlecell.dao.model.HeatmapClusterDao;
-import com.lifescs.singlecell.dao.model.MarkerExpressionListDao;
 import com.lifescs.singlecell.dao.model.ResolutionDao;
 import com.lifescs.singlecell.dto.model.HeatmapClusterLoadDto;
+import com.lifescs.singlecell.dto.model.TopMarkerDto;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
-import com.lifescs.singlecell.model.MarkerExpressionList;
 import com.lifescs.singlecell.model.Resolution;
 
 import lombok.AllArgsConstructor;
@@ -41,7 +39,6 @@ public class ExperimentService {
     private CellDao cellDao;
     private ResolutionDao resolutionDao;
     private GeneExpressionListDao geneExpressionListDao;
-    private MarkerExpressionListDao markerExpressionListDao;
     private ClusterDao clusterDao;
     private HeatmapClusterDao heatmapClusterDao;
 
@@ -55,56 +52,12 @@ public class ExperimentService {
         return experimentDao.saveExperimentDeep(e);
     }
 
-    // Returns a list of the marker expression containers for each cell
-    // Also adds the container ids to the cells
-    // IMPORTANT: Either both updated cells and the container must be saved or none,
-    // otherwise the database will turn inconsistent
-    public List<MarkerExpressionList> addMarkerExpressionsForResolution(Experiment e, Resolution r) {
-        List<Cell> cells = e.getCells();
-        List<MarkerExpressionList> expressionList = new ArrayList<>();
-
-        long start = System.nanoTime();
-
-        // Try with parallel stream ?
-        for (Cell c : cells) {
-            expressionList.add(addCellMarkerExpressions(c, r));
-        }
-
-        long end = System.nanoTime();
-        long elapsedTime = end - start;
-        log.info("Finished setting expressions: " + elapsedTime + " s");
-
-        return expressionList;
-    }
-
-    // Should be used with 'addMarkerExpressionForResolution' output
-    public void saveMarkerExpressionLists(List<MarkerExpressionList> expressionLists) {
-        log.info(expressionLists.get(0).getMarkerExpressions().toString());
-        markerExpressionListDao.saveExpressionLists(expressionLists);
+    public void removeExperiment(String experimentId) {
     }
 
     // Should be used with 'ExperimentInputService.loadGeneExpressions' output
     public void saveGeneExpressionLists(List<GeneExpressionList> expressionLists) {
         geneExpressionListDao.saveExpressionLists(expressionLists);
-    }
-
-    // Should be called only from the public method
-    // 'addMarkerExpressionsForResolution'
-    private MarkerExpressionList addCellMarkerExpressions(Cell c, Resolution r) {
-        // Get list of gene expressions
-        List<GeneExpression> markerExpressions = cellDao.getMarkerExpressionsForResolution(c, r);
-        if (markerExpressions.isEmpty())
-            log.info("It IS null");
-
-        // Create container class MarkerExpressionList
-        MarkerExpressionList mel = new MarkerExpressionList();
-        mel.setMarkerExpressions(markerExpressions);
-        mel.setResolution(r);
-        mel.setId(new ObjectId());
-
-        // Add container id to its cell
-        c.getMarkerExpressionIds().add(mel.getId());
-        return mel;
     }
 
     public Optional<Experiment> findExperimentById(String string) {
@@ -115,6 +68,7 @@ public class ExperimentService {
         return cellDao.findCellById(cellId);
     }
 
+    // move to resolution service TODO
     public Optional<Resolution> findResolutionById(String resolutionId) {
         return resolutionDao.findResolutionById(resolutionId);
     }
@@ -125,50 +79,66 @@ public class ExperimentService {
     }
 
     // Create HeatmapClusters used to draw heatmaps
-    public List<HeatmapCluster> addHeatmapClustersForResolution(Experiment e, Resolution r, Integer nBuckets)
+    public List<HeatmapCluster> addHeatmapClustersForResolution(Experiment e, Resolution r, Integer nBuckets,
+            Integer markersPerCluster)
             throws NoObjectFoundException, RuntimeException {
+        List<TopMarkerDto> dtos = resolutionDao.getTopMarkers(r, markersPerCluster);
+
         List<HeatmapCluster> result = new ArrayList<>();
         for (Cluster c : r.getClusters()) {
-            result.add(addHeatmapCluster(e, c, nBuckets));
+            result.add(addHeatmapCluster(c, dtos, nBuckets));
         }
         return result;
     }
 
-    private HeatmapCluster addHeatmapCluster(Experiment e, Cluster c, Integer nBuckets)
+    private HeatmapCluster addHeatmapCluster(Cluster c, List<TopMarkerDto> markerDtos, Integer nBuckets)
             throws NoObjectFoundException, RuntimeException {
-        List<HeatmapClusterLoadDto> dtos = clusterDao.getMarkerExpressionsForCluster(e, c);
+        List<String> resolutionMarkers = markerDtos.stream()
+                .map(d -> d.getTopMarkers()).flatMap(List::stream).toList();
+        Optional<TopMarkerDto> clusterMarkersOpt = markerDtos.stream()
+                .filter(d -> d.getClusterId().equals(c.getId())).findFirst();
+        List<String> clusterMarkers;
+        if (clusterMarkersOpt.isPresent())
+            clusterMarkers = clusterMarkersOpt.get().getTopMarkers();
+        else
+            throw new RuntimeException("Cluster markers not found for cluster: " + c.getId());
+        log.info("Getting heatmap cluster for " + c.getId());
         HeatmapCluster hc = new HeatmapCluster();
         hc.setId(new ObjectId());
-        List<String> barcodes = dtos.stream().map(d -> d.getBarcode()).toList();
+        hc.setTopMarkers(clusterMarkers);
+        List<HeatmapClusterLoadDto> dtos = clusterDao.getMarkerExpressionsForCluster(c, resolutionMarkers);
+        log.info("Finished loading cluster marker expressions");
         Map<String, Integer> bucketSizeMap = new HashMap<>();
+        List<String> barcodes = dtos.stream().map(d -> d.getBarcode()).toList();
         Map<String, String> bucketMap = getBuckets(barcodes, nBuckets, bucketSizeMap);
-        log.info(bucketMap.toString());
-        log.info("Sizes\n\n\n");
-        log.info(bucketSizeMap.toString());
-        List<HeatmapExpression> expressions = new ArrayList<>();
 
-        // For each cell dto
+        // Initialize null expressions for each bucket
+        List<HeatmapExpression> heatmapExpressions = new ArrayList<>();
+        resolutionMarkers.stream()
+                .forEach(m -> {
+                    bucketMap.values().stream().distinct().forEach(
+                            b -> heatmapExpressions.add(new HeatmapExpression(b, m)));
+                });
         dtos.stream().forEach(d -> {
 
-            log.info("Cluster: " + c.getId() + " Size: " + d.getExpressions().size());
             // For each expression object
             d.getExpressions().stream().forEach(dtoExp -> {
-                HeatmapExpression expr = expressions.stream()
+                Optional<HeatmapExpression> bucketExpOpt = heatmapExpressions.stream()
                         .filter(exp -> exp.getBucketId().equals(bucketMap.get(d.getBarcode())))
-                        .filter(exp -> exp.getGeneCode().equals(dtoExp.getGeneCode())).findFirst().orElseGet(() -> {
-                            HeatmapExpression exprAux = new HeatmapExpression(bucketMap.get(d.getBarcode()),
-                                    dtoExp.getGeneCode());
-                            expressions.add(exprAux);
-                            return exprAux;
-                        });
-                // sum expression or add new one
-                expr.setExpression(expr.getExpression() + dtoExp.getExpression());
+                        .filter(exp -> exp.getGeneCode().equals(dtoExp.getGeneCode())).findFirst();
+                HeatmapExpression bucketExp;
+                if (bucketExpOpt.isPresent())
+                    bucketExp = bucketExpOpt.get();
+                else
+                    throw new RuntimeException(
+                            "Failed getting an expression while adding heatmap cluster: " + c.getId());
+                // sum expression
+                bucketExp.setExpression(bucketExp.getExpression() + dtoExp.getExpression());
             });
         });
-        log.info("Finished adding expressions");
-        expressions.stream()
+        heatmapExpressions.stream()
                 .forEach(exp -> exp.setExpression(exp.getExpression() / bucketSizeMap.get(exp.getBucketId())));
-        hc.setExpressions(expressions);
+        hc.setExpressions(heatmapExpressions);
         hc.setBuckets(bucketMap.values().stream().distinct().toList());
 
         // Add the heatmapCluster to its cluster

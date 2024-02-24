@@ -1,5 +1,7 @@
 package com.lifescs.singlecell.controller;
 
+import java.util.List;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,21 +41,12 @@ public class ExperimentController {
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/experiment/save_marker_expressions")
-    public void saveMarkerExpression() throws Exception {
-        Experiment e = experimentService.findExperimentById("exp1").get();
-        experimentService.saveMarkerExpressionLists(
-                experimentService.addMarkerExpressionsForResolution(e, e.getResolutions().get(3)));
-        experimentService.saveExperimentDeep(e);
-    }
-
-    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/experiment/save_heatmap_clusters")
     public void saveHeatmapClusters() throws Exception {
         Experiment e = experimentService.findExperimentById("exp1").get();
-        // experimentService.saveHeatmapClusters(
-        experimentService.addHeatmapClustersForResolution(e, e.getResolutions().get(3), 20);
-        // experimentService.saveExperimentDeep(e);
+        experimentService.saveHeatmapClusters(
+                experimentService.addHeatmapClustersForResolution(e, e.getResolutions().get(3), 20, 20));
+        experimentService.saveExperimentDeep(e);
     }
 
     @CrossOrigin(origins = "http://localhost:3000")

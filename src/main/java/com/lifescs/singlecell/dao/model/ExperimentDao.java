@@ -7,14 +7,11 @@ import org.springframework.stereotype.Component;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
-import com.lifescs.singlecell.model.MarkerExpressionList;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.model.Sample;
 import com.lifescs.singlecell.repository.CellRepository;
 import com.lifescs.singlecell.repository.ClusterRepository;
 import com.lifescs.singlecell.repository.ExperimentRepository;
-import com.lifescs.singlecell.repository.GeneExpressionListRepository;
-import com.lifescs.singlecell.repository.MarkerExpressionListRepository;
 import com.lifescs.singlecell.repository.ResolutionRepository;
 import com.lifescs.singlecell.repository.SampleRepository;
 

@@ -20,5 +20,7 @@ public class HeatmapCluster {
     private List<String> buckets;
     @Field
     private List<HeatmapExpression> expressions;
+    @Field
+    private List<String> topMarkers;
 
 }

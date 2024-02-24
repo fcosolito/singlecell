@@ -28,8 +28,6 @@ public class Cell {
     @Field
     private ObjectId geneExpressionId;
     @Field
-    private List<ObjectId> markerExpressionIds;
-    @Field
     private Double percentOfMitochondrialGenes;
     @Field
     private Integer numberOfUMIs;
@@ -60,7 +58,6 @@ public class Cell {
 
     public Cell() {
         this.clusterIds = new ArrayList<>();
-        this.markerExpressionIds = new ArrayList<>();
     }
 
 }

@@ -312,17 +312,20 @@ public class PlotDao {
                                 .foreignField("_id")
                                 .as("heatmapInfo");
 
-                ProjectionOperation project = Aggregation.project("name", "markers")
+                ProjectionOperation project = Aggregation.project("name")
                                 .and("heatmapInfo.buckets").as("buckets")
+                                .and("heatmapInfo.topMarkers").as("markers")
                                 .and("heatmapInfo.expressions").as("expressions");
 
                 UnwindOperation unwindExpressions = Aggregation.unwind("$expressions");
                 UnwindOperation unwindBuckets = Aggregation.unwind("$buckets");
+                UnwindOperation unwindMarkers = Aggregation.unwind("$markers");
 
                 Aggregation aggregation = Aggregation.newAggregation(
                                 matchCluster,
                                 lookupHeatmapCluster,
                                 project,
+                                unwindMarkers,
                                 unwindExpressions,
                                 unwindBuckets);
 

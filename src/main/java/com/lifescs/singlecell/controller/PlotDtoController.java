@@ -13,7 +13,6 @@ import com.lifescs.singlecell.dto.model.LowDimentionalDtoByGene;
 import com.lifescs.singlecell.dto.model.LowDimentionalDtoByResolution;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Experiment;
-import com.lifescs.singlecell.model.MarkerExpressionList;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.service.ExperimentService;
 import com.lifescs.singlecell.service.PlotService;
@@ -56,30 +55,6 @@ public class PlotDtoController {
 
         // log.info(dto.getClusterNames().toString());
         return dto;
-    }
-
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/test/markers")
-    public void testMarkers() {
-        Experiment e = new Experiment("Test experiment");
-        e.setId("exp1");
-        Resolution resolution = new Resolution();
-        resolution.setId("exp1cluster_0.20");
-
-        experimentService.addMarkerExpressionsForResolution(e, resolution);
-
-        return;
-    }
-
-    @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/test/cellmarkers")
-    public void testCellMarkers() {
-        Experiment e = experimentService.findExperimentById("exp1").get();
-        Cell cell = experimentService.findCellById("exp11").get();
-        Resolution resolution = experimentService.findResolutionById("exp1cluster_0.20").get();
-
-        experimentService.addMarkerExpressionsForResolution(e, resolution);
-
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
