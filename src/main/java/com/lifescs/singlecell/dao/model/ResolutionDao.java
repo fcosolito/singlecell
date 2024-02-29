@@ -12,7 +12,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
-import com.lifescs.singlecell.dto.model.TopMarkerDto;
+import com.lifescs.singlecell.dto.api.TopMarkerDto;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.repository.ResolutionRepository;
 

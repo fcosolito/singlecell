@@ -28,6 +28,7 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
     private PathMapper pathMapper;
 
     // Reads the .mtx matrix file into a dto, gets path from mapper
+    // TODO add chunk size: read N lines
     public GeneExpressionMatrixInputDto readMatrix(Project p, Experiment e) throws Exception {
         GeneExpressionMatrixInputDto matrix = new GeneExpressionMatrixInputDto();
 
@@ -50,6 +51,7 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
 
                 }
             }
+            long lineCount = 0;
             while ((line = bufferedReader.readLine()) != null) {
                 GeneExpressionDto ge = new GeneExpressionDto();
                 String[] elements = line.split("\\s+");
@@ -57,6 +59,8 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
                 ge.setGeneId(Integer.parseInt(elements[1]));
                 ge.setExpression(Double.parseDouble(elements[2]));
                 expressionList.add(ge);
+                lineCount++;
+                log.info("Line count: " + lineCount);
 
             }
             matrix.setGeneExpressionList(expressionList);

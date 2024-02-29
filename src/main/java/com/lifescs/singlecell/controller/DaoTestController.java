@@ -2,12 +2,19 @@ package com.lifescs.singlecell.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.lifescs.singlecell.dao.model.ExperimentDao;
+import com.lifescs.singlecell.dao.model.PlotDao;
 import com.lifescs.singlecell.dao.model.ResolutionDao;
-import com.lifescs.singlecell.dto.model.TopMarkerDto;
+import com.lifescs.singlecell.dto.api.TopMarkerDto;
+import com.lifescs.singlecell.dto.api.ViolinDto;
+import com.lifescs.singlecell.dto.query.ViolinQueryDto;
+import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Resolution;
+import com.lifescs.singlecell.service.ExperimentService;
 
 import lombok.AllArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.bson.Document;
@@ -17,11 +24,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 @AllArgsConstructor
 public class DaoTestController {
     private ResolutionDao resolutionDao;
+    private ExperimentDao experimentDao;
+    private ExperimentService experimentService;
+    private PlotDao plotDao;
 
-    @GetMapping("/test/resolution/top_markers")
-    public List<TopMarkerDto> getMethodName() {
-        Resolution r = resolutionDao.findResolutionById("exp1cluster_0.10").get();
-        return resolutionDao.getTopMarkers(r, 5);
+    @GetMapping("/test/geneCodes2")
+    public List<ViolinDto> getMethodName() {
+        Experiment e = experimentService.findExperimentById("exp1").get();
+        List<String> searchList = new ArrayList<>();
+        searchList.add("Vcpip1");
+        searchList.add("Tram1");
+        searchList.add("Naaa");
+        searchList.add("Tubab1");
+        return plotDao.getViolinDtos(e, e.getResolutions().get(3), searchList);
     }
 
 }

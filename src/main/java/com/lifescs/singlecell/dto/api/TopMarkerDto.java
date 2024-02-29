@@ -1,4 +1,4 @@
-package com.lifescs.singlecell.dto.model;
+package com.lifescs.singlecell.dto.api;
 
 import java.util.List;
 

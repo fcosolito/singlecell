@@ -15,14 +15,16 @@ import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dao.model.CellDao;
+import com.lifescs.singlecell.dao.model.CellExpressionListDao;
 import com.lifescs.singlecell.dao.model.ClusterDao;
 import com.lifescs.singlecell.dao.model.ExperimentDao;
 import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
 import com.lifescs.singlecell.dao.model.HeatmapClusterDao;
 import com.lifescs.singlecell.dao.model.ResolutionDao;
-import com.lifescs.singlecell.dto.model.HeatmapClusterLoadDto;
-import com.lifescs.singlecell.dto.model.TopMarkerDto;
+import com.lifescs.singlecell.dto.api.HeatmapClusterLoadDto;
+import com.lifescs.singlecell.dto.api.TopMarkerDto;
 import com.lifescs.singlecell.model.Cell;
+import com.lifescs.singlecell.model.CellExpressionList;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Resolution;
@@ -41,6 +43,7 @@ public class ExperimentService {
     private GeneExpressionListDao geneExpressionListDao;
     private ClusterDao clusterDao;
     private HeatmapClusterDao heatmapClusterDao;
+    private CellExpressionListDao cellExpressionListDao;
 
     public Experiment saveExperiment(Experiment e) {
         return experimentDao.saveExperiment(e);
@@ -58,6 +61,11 @@ public class ExperimentService {
     // Should be used with 'ExperimentInputService.loadGeneExpressions' output
     public void saveGeneExpressionLists(List<GeneExpressionList> expressionLists) {
         geneExpressionListDao.saveExpressionLists(expressionLists);
+    }
+
+    // Should be used with 'ExperimentInputService.loadGeneExpressions' output
+    public void saveCellExpressionLists(List<CellExpressionList> expressionLists) {
+        cellExpressionListDao.saveExpressionLists(expressionLists);
     }
 
     public Optional<Experiment> findExperimentById(String string) {

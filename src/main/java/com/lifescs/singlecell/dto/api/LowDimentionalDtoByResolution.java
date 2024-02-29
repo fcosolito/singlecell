@@ -1,4 +1,4 @@
-package com.lifescs.singlecell.dto.model;
+package com.lifescs.singlecell.dto.api;
 
 import java.util.List;
 
@@ -7,7 +7,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class LowDimentionalDtoByGene {
+public class LowDimentionalDtoByResolution {
+
     private List<String> barcodes;
     private List<Double> spring1;
     private List<Double> spring2;
@@ -19,6 +20,5 @@ public class LowDimentionalDtoByGene {
     private List<Double> tsne2;
     private List<String> samples;
     private List<String> clusterNames;
-    private List<Double> expressionSum;
 
 }

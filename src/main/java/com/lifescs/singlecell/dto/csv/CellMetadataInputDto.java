@@ -28,7 +28,10 @@ public class CellMetadataInputDto extends CsvBean {
     private String cellNameLow;
     @CsvBindByName(column = "cellNamesHigh")
     private String cellNameHigh;
-    @CsvBindAndJoinByName(column = "cluster_[0-9].[0-9]+", elementType = String.class)
+    // EXP2
+    // @CsvBindAndJoinByName(column = "cluster_[0-9].[0-9]+", elementType =
+    // String.class)
+    @CsvBindAndJoinByName(column = "[0-9].[0-9]+", elementType = String.class)
     private MultiValuedMap<String, String> clusters;
     @CsvBindByName(column = "spring1")
     private Double spring1;

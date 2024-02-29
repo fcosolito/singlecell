@@ -2,6 +2,7 @@ package com.lifescs.singlecell.dao.model;
 
 import java.util.Optional;
 
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.model.Cell;
@@ -22,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class ExperimentDao {
+    private MongoTemplate mongoTemplate;
     private SampleRepository sampleRepository;
     private ExperimentRepository experimentRepository;
     private CellRepository cellRepository;
@@ -84,5 +86,4 @@ public class ExperimentDao {
     public Optional<Cluster> findClusterById(String id) {
         return clusterRepository.findById(id);
     }
-
 }

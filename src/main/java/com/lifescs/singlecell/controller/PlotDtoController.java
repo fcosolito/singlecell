@@ -6,11 +6,13 @@ import java.util.List;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.lifescs.singlecell.dto.model.HeatmapDto;
-import com.lifescs.singlecell.dto.model.LowDimentionalDtoByGene;
-import com.lifescs.singlecell.dto.model.LowDimentionalDtoByResolution;
+import com.lifescs.singlecell.dto.api.HeatmapDto;
+import com.lifescs.singlecell.dto.api.LowDimentionalDtoByGene;
+import com.lifescs.singlecell.dto.api.LowDimentionalDtoByResolution;
+import com.lifescs.singlecell.dto.api.ViolinDto;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Resolution;
@@ -28,12 +30,10 @@ public class PlotDtoController {
     private ExperimentService experimentService;
 
     @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/plots/low_dimentional/by_resolution")
+    @GetMapping("/plots/low_dimensional/by_resolution")
     public LowDimentionalDtoByResolution getDtoByResolution() {
-        Experiment testExperiment = new Experiment("Test experiment");
-        testExperiment.setId("exp1");
-        Resolution testResolution = new Resolution();
-        testResolution.setId("exp1cluster_0.20");
+        Experiment testExperiment = experimentService.findExperimentById("exp1").get();
+        Resolution testResolution = experimentService.findResolutionById("exp1cluster_0.20").get();
         LowDimentionalDtoByResolution dto = plotService.getLowDimentionalDtoByResolution(testExperiment,
                 testResolution);
         // log.info(dto.getClusterNames().toString());
@@ -41,16 +41,17 @@ public class PlotDtoController {
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/plots/low_dimentional/by_gene")
+    @GetMapping("/plots/low_dimensional/by_gene")
     public LowDimentionalDtoByGene getDtoByGene() {
-        Experiment testExperiment = new Experiment("Test experiment");
-        testExperiment.setId("exp1");
+        Experiment e = experimentService.findExperimentById("exp1").get();
 
         List<String> searchList = new ArrayList<>();
         searchList.add("Tram1");
         searchList.add("Vcpip1");
+        searchList.add("Naaa");
+        searchList.add("Tubab1");
 
-        LowDimentionalDtoByGene dto = plotService.getLowDimentionalDtoByGeneCodes(testExperiment,
+        LowDimentionalDtoByGene dto = plotService.getLowDimentionalDtoByGeneCodes(e,
                 searchList);
 
         // log.info(dto.getClusterNames().toString());
@@ -58,13 +59,23 @@ public class PlotDtoController {
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
-    @GetMapping("/plots/heatmap")
-    public List<HeatmapDto> getHeatmap() {
-        Experiment e = experimentService.findExperimentById("exp1").get();
-        return plotService.getHeatmapDtos(e.getResolutions().get(3));
+    @GetMapping("/plots/heatmap/{resolutionId}")
+    public List<HeatmapDto> getHeatmap(@PathVariable String resolutionId) {
+        Resolution r = experimentService.findResolutionById(resolutionId).get();
+        return plotService.getHeatmapDtos(r);
 
     }
 
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/plots/violin")
+    public List<ViolinDto> getViolin() {
+        Experiment e = experimentService.findExperimentById("exp1").get();
+        List<String> searchList = new ArrayList<>();
+        searchList.add("Tram1");
+        searchList.add("Vcpip1");
+        return plotService.getViolinDtos(e, e.getResolutions().get(3), searchList);
+
+    }
     // @ExceptionHandler
 
 }

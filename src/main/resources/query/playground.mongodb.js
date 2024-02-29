@@ -5,16 +5,40 @@ experimentId = "exp1"
 resolutionId = "exp1cluster_0.10"
 clusterId = "exp1cluster_0.101"
 numberOfMarkers = 5
-db.getCollection("resolution").aggregate([
+geneCodes = ["Vcpip1", "Tram1", "Gata1", "Naaa"];
+db.getCollection("cellExpressionList").aggregate([
     {
         $match:{
-            _id: resolutionId
+            experimentId: experimentId,
+            geneCode: { $in: geneCodes}
+        }
+    },
+    {
+        $unwind: "$expressions"
+    },
+    {
+        $group: {
+          _id: "$expressions.cellId",
+          expressions: {
+            $push: {
+                geneCode: "$geneCode",
+                expression: "$expressions.expression"
+            }
+          }
+        }
+    },
+    {
+        $lookup: {
+          from: "cell",
+          localField: "_id",
+          foreignField: "_id",
+          as: "cellInfo"
         }
     },
     {
         $lookup: {
           from: "cluster",
-          localField: "clusters",
+          localField: "cellInfo.clusterIds",
           foreignField: "_id",
           as: "clusterInfo"
         }
@@ -23,66 +47,68 @@ db.getCollection("resolution").aggregate([
         $unwind: "$clusterInfo"
     },
     {
-        $project: {
-            cluster:1,
-            topMarkers: {
-                $slice: ["$orderedMarkers", 0, numberOfMarkers]
-            }
-        }
-    }
-    
-])/*
-    {
-        $project: {
-            name:1, 
-            markers:1,
-            buckets: "$heatmapInfo.buckets",
-            expressions: "$heatmapInfo.expressions"
-        }
-    },
-    {
-        $unwind: "$buckets"
-    },
-    {
-        $unwind: "$expressions"
-    },
- ]);/*
-    {
         $match: {
-          "cellInfo.clusterIds": clusterId
+            "clusterInfo.resolution": resolutionId
         }
     },
-  
     {
         $project: {
-          barcode:1,
+          clusterId: "$clusterInfo._id",
+          clusterName: "$clusterInfo.name",
+          sampleId: "$cellInfo.sample",
+          expressions:1
+        }
+    },
+    {
+        $group: {
+          _id: {
+            clusterId: "$clusterId",
+            sampleId: "$sampleId"
+        },
+          clusterName: {
+            $first: "$clusterName"
+          },
           expressions: {
-            $map: {
-                input: "$markerExpressionsInfo.markerExpressions",
-                in: {
-                    "barcode":"$barcode",
-                    "geneCode":"$$this.geneCode",
-                    "expression":"$$this.expression"
+            $push: "$expressions"
+          }
+        }
+    },
+    
+    {
+        $lookup: {
+          from: "cell",
+          localField: "_id.clusterId",
+          foreignField: "clusterIds",
+          pipeline: [
+            {
+                $group: {
+                    _id: null,
+                    cellCount: {
+                        $count: {}
+                    }
                 }
             }
-          }
-          
+          ],
+          as: "cellCount"
         }
     },
-    
-    /* 
-    
-    get cells
-    lookup markerExpressionList
-    get only lists from cluster of the selected resolution
-    lookup cluster
-    project cell barcode or id, expression list, cluster markers and cluster name
-    group  by cluster pushing properties into 'cellNames' and 'expressions'
+    {
+        $project: {
+            cellCount: "$cellCount.cellCount",
+            clusterId: "$_id.clusterId",
+            sampleId: "$_id.sampleId",
+            expressions:1,
+            _id:0
 
-    /*
-    get cell
-    lookup cluster
-    project array with marker names
-    lookup expression list
-    filter expression list for gene codes in 'marker names'
-    */
+        }
+    },
+    {
+        $unwind: "$sampleId"
+    }
+    // add sub aggregation with count of cells by cluster and sample
+    // if it is not possible perform a separate query
+    
+    
+])/*
+  
+/* */
