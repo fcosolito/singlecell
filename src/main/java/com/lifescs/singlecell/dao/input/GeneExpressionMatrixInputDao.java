@@ -6,16 +6,22 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.lifescs.singlecell.dao.model.CellExpressionListDao;
+import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
 import com.lifescs.singlecell.dto.csv.GeneExpressionDto;
 import com.lifescs.singlecell.dto.csv.GeneExpressionMatrixInputDto;
 import com.lifescs.singlecell.dto.csv.GeneMapDto;
 import com.lifescs.singlecell.mapper.PathMapper;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Project;
+import com.lifescs.singlecell.thread.SaveCellExpressions;
+import com.lifescs.singlecell.thread.SaveGeneExpressions;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,34 +30,36 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
-
+    private GeneExpressionListDao geneExpressionListDao;
+    private CellExpressionListDao cellExpressionListDao;
     private PathMapper pathMapper;
 
     // Reads the .mtx matrix file into a dto, gets path from mapper
     // TODO add chunk size: read N lines
-    public GeneExpressionMatrixInputDto readMatrix(Project p, Experiment e) throws Exception {
-        GeneExpressionMatrixInputDto matrix = new GeneExpressionMatrixInputDto();
+    public void readMatrix(Project p, Experiment e, Long chunckSize) throws Exception {
+        // Create an expression list for each cell in the experiment
+        geneExpressionListDao.startExpressionLoad(e, readGeneMapping(p, e));
 
-        log.info("Reading Matrix file");
+        // Create an expression list for each gene in the gene map
+        cellExpressionListDao.startExpressionLoad(e, readGeneMapping(p, e));
+
+        log.info("Reading Matrix file with chunk size: " + chunckSize / 1_000_000.0 + "M lines");
         try (BufferedReader bufferedReader = new BufferedReader(
                 new FileReader(pathMapper.geneExpressionMatrixPath(p, e)))) {
             String line = null;
             Boolean commentSection = true;
-            List<String> comments = new ArrayList<>();
             List<GeneExpressionDto> expressionList = new ArrayList<>();
             while ((line = bufferedReader.readLine()) != null && commentSection) {
                 if (line.charAt(0) == '%') {
-                    comments.add(line);
+                    // do nothing
                 } else {
                     commentSection = false;
-                    matrix.setComments(comments);
-
-                    // The first row after comments has the counts
-                    matrix.setCountsRow(line);
-
                 }
             }
+            int chunkCount = 0;
             long lineCount = 0;
+            long start = System.nanoTime();
+            ExecutorService service = Executors.newFixedThreadPool(4);
             while ((line = bufferedReader.readLine()) != null) {
                 GeneExpressionDto ge = new GeneExpressionDto();
                 String[] elements = line.split("\\s+");
@@ -60,13 +68,40 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
                 ge.setExpression(Double.parseDouble(elements[2]));
                 expressionList.add(ge);
                 lineCount++;
-                log.info("Line count: " + lineCount);
+                if (lineCount >= chunckSize) {
+                    log.info("Processing chunk: " + chunkCount);
+                    service.execute(new SaveCellExpressions(cellExpressionListDao, e, expressionList));
+                    service.execute(new SaveGeneExpressions(geneExpressionListDao, e, expressionList));
+                    // process expression list
+                    // Thread geneThread = new Thread(new SaveGeneExpressions(geneExpressionListDao,
+                    // e, expressionList));
+                    // geneThread.start();
+                    // Thread cellThread = new Thread(new SaveCellExpressions(cellExpressionListDao,
+                    // e, expressionList));
+                    // cellThread.start();
+                    // geneThread.join();
+                    // cellThread.join();
+
+                    // empty expression list
+                    expressionList = null;
+                    expressionList = new ArrayList<>();
+                    lineCount = 0;
+                    chunkCount++;
+
+                }
 
             }
-            matrix.setGeneExpressionList(expressionList);
+            log.info("Processing last chunk: " + chunkCount + " with " + lineCount + " lines");
+            geneExpressionListDao.bulkSaveExpressions(e, expressionList);
+            cellExpressionListDao.bulkSaveExpressions(e, expressionList);
+            geneExpressionListDao.endExpressionLoad();
+            cellExpressionListDao.endExpressionLoad();
 
-            log.info("Finished reading matrix");
-            return matrix;
+            long end = System.nanoTime();
+            Double totalExpressions = (chunkCount * chunckSize + lineCount) / 1_000_000.0;
+            Double elapsedTime = (end - start) / 1_000_000_000.0;
+            log.info("Finished saving " + totalExpressions + "M expressions in " + elapsedTime + " seconds");
+            log.info("Average saving rate: " + totalExpressions / elapsedTime + "M/s");
 
         }
 

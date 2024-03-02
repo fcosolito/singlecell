@@ -30,17 +30,18 @@ public class ExperimentController {
         Project p = new Project("Example project");
         p.setId("proj1");
         Experiment e = new Experiment("Example experiment");
-        e.setId("exp2");
+        e.setId("exp3");
         p.getExperiments().add(e);
         // Experiment e = experimentService.findExperimentById("exp1").get();
 
         experimentInputService.loadCellsMetadata(p, e);
-        log.info(e.getResolutions().toString());
         experimentInputService.loadMarkers(p, e);
         long start = System.nanoTime();
-        experimentService.saveGeneExpressionLists(experimentInputService.loadGeneExpressions(p,
-                e));
-        experimentService.saveCellExpressionLists(experimentInputService.loadCellExpressions(p, e));
+        // experimentService.saveGeneExpressionLists(experimentInputService.loadGeneExpressions(p,
+        // e));
+        // experimentService.saveCellExpressionLists(experimentInputService.loadCellExpressions(p,
+        // e));
+        experimentInputService.loadAndSaveExpressions(p, e);
         long end = System.nanoTime();
         log.info("Elapsed time: " + (end - start) / 1_000_000_000.0 + " seconds");
         experimentService.saveExperimentDeep(e);

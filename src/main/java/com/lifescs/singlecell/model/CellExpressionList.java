@@ -30,4 +30,9 @@ public class CellExpressionList {
     public CellExpressionList() {
         this.expressions = new ArrayList<>();
     }
+
+    public CellExpressionList(ObjectId id) {
+        this.id = id;
+        this.expressions = new ArrayList<>();
+    }
 }
