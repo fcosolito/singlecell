@@ -56,11 +56,12 @@ public class ExperimentInputService {
     private CellExpressionListDao cellExpressionListDao;
 
     public void loadAndSaveExpressions(Project p, Experiment e) throws Exception {
-        matrixDao.readMatrix(p, e, 5000000L);
+        matrixDao.readMatrix(p, e, 2000000L);
     }
 
     // Loads cell objects into an experiment
     public void loadCellsMetadata(Project p, Experiment experiment) throws Exception {
+        log.info("Loading cells for experiment: " + experiment.getName());
         for (CellMetadataInputDto dto : metadataDao.readCSVToMetadataBeans(p, experiment)) {
             loadCellMetadata(dto, experiment);
         }
@@ -130,26 +131,15 @@ public class ExperimentInputService {
         marker.setAdjacentPValue(dto.getAdjacentPValue());
         marker.setPercent1(dto.getPercent1());
         marker.setPercent2(dto.getPercent2());
-        // EXP2
-        String formatedResolutionId = "cluster_" + String.format("%.2f",
-                Double.parseDouble(dto.getResolution()));
-        Optional<Cluster> opCluster = experiment.getResolutions().stream()
+        Cluster cluster = experiment.getResolutions().stream()
                 .map(r -> r.getClusters()).flatMap(List::stream)
                 .filter(c -> c.getId()
-                        // EXP2
-                        .equals((experiment.getId() + formatedResolutionId + dto.getCluster())))
-                // .equals((experiment.getId() + dto.getResolution() + dto.getCluster()))) //
-                // TODO Clean hardcoded
-                // resolution name
-                .findFirst();
-        if (opCluster.isPresent()) {
-            opCluster.get().getMarkers().add(marker);
-        } else {
-            // EXP2
-            throw new RuntimeException("Cluster not found: " + formatedResolutionId + dto.getCluster());
-            // throw new RuntimeException("Cluster not found: " + dto.getResolution() +
-            // dto.getCluster());
-        }
+                        // TODO change how these are matched
+                        .equals((experiment.getId() + dto.getResolution() + dto.getCluster()))) //
+                .findFirst().orElseThrow(() -> new RuntimeException("Cluster not found: " + dto.getResolution() +
+                        dto.getCluster()));
+
+        cluster.getMarkers().add(marker);
         return marker;
 
     }

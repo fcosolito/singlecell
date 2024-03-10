@@ -24,13 +24,20 @@ public class ExperimentController {
     private ExperimentInputService experimentInputService;
     private ExperimentService experimentService;
 
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin
+    @GetMapping("/test/test")
+    public String testApi() {
+        log.info("Running test");
+        return "Test";
+    }
+
+    @CrossOrigin
     @GetMapping("/experiment/load_example")
     public String loadExample() throws Exception {
         Project p = new Project("Example project");
         p.setId("proj1");
         Experiment e = new Experiment("Example experiment");
-        e.setId("exp3");
+        e.setId("exp2");
         p.getExperiments().add(e);
         // Experiment e = experimentService.findExperimentById("exp1").get();
 
@@ -42,15 +49,15 @@ public class ExperimentController {
         // experimentService.saveCellExpressionLists(experimentInputService.loadCellExpressions(p,
         // e));
         experimentInputService.loadAndSaveExpressions(p, e);
+        experimentService.saveExperimentDeep(e);
         long end = System.nanoTime();
         log.info("Elapsed time: " + (end - start) / 1_000_000_000.0 + " seconds");
-        experimentService.saveExperimentDeep(e);
 
         return "Experiment loaded";
 
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin
     @GetMapping("/experiment/save_heatmap_clusters")
     public void saveHeatmapClusters() throws Exception {
         Experiment e = experimentService.findExperimentById("exp1").get();
@@ -62,10 +69,17 @@ public class ExperimentController {
         experimentService.saveExperimentDeep(e);
     }
 
-    @CrossOrigin(origins = "http://localhost:3000")
+    @CrossOrigin
     @GetMapping("/experiment/clean")
     public void clean() throws Exception {
         // Clean database
+    }
+
+    @CrossOrigin
+    @GetMapping("/experiment/fill_expressions")
+    public void fillExpressionList() throws Exception {
+        Experiment e = experimentService.findExperimentById("exp2").get();
+        experimentService.fillExpressionLists(e);
     }
 
 }

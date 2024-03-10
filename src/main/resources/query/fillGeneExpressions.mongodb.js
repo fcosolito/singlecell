@@ -6,10 +6,10 @@ resolutionId = "exp1cluster_0.10"
 clusterId = "exp1cluster_0.101"
 numberOfMarkers = 5
 geneCodes = ["Vcpip1", "Tram1", "Gata1", "Naaa"];
-db.getCollection("partialCellExpressionList").aggregate([
+db.getCollection("partialGeneExpressionList").aggregate([
     {
         $group: {
-          _id: "$cellExpressionListId",
+          _id: "$geneExpressionListId",
           expressions: {
             $push: "$expressions"
           }
@@ -28,7 +28,7 @@ db.getCollection("partialCellExpressionList").aggregate([
       }
     },
     {
-      $out: 'cellExpressionList2'
+      $out: 'geneExpressionList2'
     }
   ], {allowDiskUse:true})/*
     {

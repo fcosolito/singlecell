@@ -45,6 +45,15 @@ public class ExperimentService {
     private HeatmapClusterDao heatmapClusterDao;
     private CellExpressionListDao cellExpressionListDao;
 
+    public void fillExpressionLists(Experiment e) {
+        e.getExpressionsByGeneIds().stream().forEach(id -> {
+            cellExpressionListDao.fillExpressionList(id);
+        });
+        e.getCells().forEach(cell -> {
+            geneExpressionListDao.fillExpressionList(cell.getGeneExpressionId());
+        });
+    }
+
     public Experiment saveExperiment(Experiment e) {
         return experimentDao.saveExperiment(e);
     }

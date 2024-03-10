@@ -59,7 +59,8 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
             int chunkCount = 0;
             long lineCount = 0;
             long start = System.nanoTime();
-            ExecutorService service = Executors.newFixedThreadPool(4);
+            int poolSize = 4;
+            // ExecutorService service = Executors.newFixedThreadPool(poolSize);
             while ((line = bufferedReader.readLine()) != null) {
                 GeneExpressionDto ge = new GeneExpressionDto();
                 String[] elements = line.split("\\s+");
@@ -70,17 +71,19 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
                 lineCount++;
                 if (lineCount >= chunckSize) {
                     log.info("Processing chunk: " + chunkCount);
-                    service.execute(new SaveCellExpressions(cellExpressionListDao, e, expressionList));
-                    service.execute(new SaveGeneExpressions(geneExpressionListDao, e, expressionList));
+                    // service.execute(new SaveCellExpressions(cellExpressionListDao, e,
+                    // expressionList));
+                    // service.execute(new SaveGeneExpressions(geneExpressionListDao, e,
+                    // expressionList));
                     // process expression list
-                    // Thread geneThread = new Thread(new SaveGeneExpressions(geneExpressionListDao,
-                    // e, expressionList));
-                    // geneThread.start();
-                    // Thread cellThread = new Thread(new SaveCellExpressions(cellExpressionListDao,
-                    // e, expressionList));
-                    // cellThread.start();
-                    // geneThread.join();
-                    // cellThread.join();
+                    Thread geneThread = new Thread(new SaveGeneExpressions(geneExpressionListDao,
+                            e, expressionList));
+                    geneThread.start();
+                    Thread cellThread = new Thread(new SaveCellExpressions(cellExpressionListDao,
+                            e, expressionList));
+                    cellThread.start();
+                    geneThread.join();
+                    cellThread.join();
 
                     // empty expression list
                     expressionList = null;
