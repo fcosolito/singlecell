@@ -22,8 +22,7 @@ import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dto.api.HeatmapDto;
-import com.lifescs.singlecell.dto.api.LowDimentionalDtoByGene;
-import com.lifescs.singlecell.dto.api.LowDimentionalDtoByResolution;
+import com.lifescs.singlecell.dto.api.LowDimensionalDto;
 import com.lifescs.singlecell.dto.api.ViolinDto;
 import com.lifescs.singlecell.dto.query.ViolinQueryDto;
 import com.lifescs.singlecell.model.Cell;
@@ -46,7 +45,7 @@ public class PlotDao {
                 private Double sumOfExpressions;
         }
 
-        public LowDimentionalDtoByGene getLowDimentionalDtoByGeneCodes(Experiment e, List<String> geneCodes) {
+        public LowDimensionalDto getLowDimensionalDtoByGeneCodes(Experiment e, List<String> geneCodes) {
                 MatchOperation matchGenes = Aggregation.match(Criteria.where("experimentId").is(e.getId())
                                 .and("geneCode").in(geneCodes));
                 UnwindOperation unwindExpressions = Aggregation.unwind("expressions");
@@ -67,7 +66,7 @@ public class PlotDao {
                         throw new NoObjectFoundException(
                                         "Could not get expression sums for gene codes: " + geneCodes.toString());
 
-                LowDimentionalDtoByGene result = new LowDimentionalDtoByGene();
+                LowDimensionalDto result = new LowDimensionalDto();
 
                 List<Cell> cells = e.getCells();
                 Map<String, Double> expressionSumsMap = expressionSums.stream()
@@ -101,7 +100,7 @@ public class PlotDao {
                 return result;
         }
 
-        public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution2(Experiment e, Resolution r) {
+        public LowDimensionalDto getLowDimensionalDtoByResolution2(Experiment e, Resolution r) {
                 MatchOperation matchExperiment = Aggregation.match(Criteria.where("_id").is(e.getId()));
                 UnwindOperation unwindCells = Aggregation.unwind("$cells");
                 UnwindOperation unwindCellInfo = Aggregation.unwind("$cellInfo");
@@ -162,8 +161,8 @@ public class PlotDao {
                                 groupByExperiment
 
                 );
-                List<LowDimentionalDtoByResolution> result = mongoTemplate
-                                .aggregate(aggregation, "experiment", LowDimentionalDtoByResolution.class)
+                List<LowDimensionalDto> result = mongoTemplate
+                                .aggregate(aggregation, "experiment", LowDimensionalDto.class)
                                 .getMappedResults();
 
                 return result.isEmpty() ? null : result.get(0);

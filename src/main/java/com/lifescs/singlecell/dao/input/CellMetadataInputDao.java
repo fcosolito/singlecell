@@ -11,11 +11,9 @@ import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Project;
 
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Component
 @AllArgsConstructor
-@Slf4j
 public class CellMetadataInputDao extends CsvDao<CellMetadataInputDto> {
 
     private PathMapper pathMapper;

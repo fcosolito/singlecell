@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class LowDimentionalDtoByGene {
+public class LowDimensionalDto {
     private List<String> barcodes;
     private List<Double> spring1;
     private List<Double> spring2;
@@ -22,7 +22,7 @@ public class LowDimentionalDtoByGene {
     private List<String> clusterNames;
     private List<Double> expressionSum;
 
-    public LowDimentionalDtoByGene() {
+    public LowDimensionalDto() {
         this.barcodes = new ArrayList<>();
         this.spring1 = new ArrayList<>();
         this.spring2 = new ArrayList<>();

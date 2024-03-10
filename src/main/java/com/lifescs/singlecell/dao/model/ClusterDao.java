@@ -14,7 +14,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
-import com.lifescs.singlecell.dto.api.HeatmapClusterLoadDto;
+import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
 import com.lifescs.singlecell.model.Cluster;
 
 import lombok.AllArgsConstructor;

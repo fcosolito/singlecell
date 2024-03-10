@@ -45,6 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 // samples)
 // 3. Load markers
 // 4. Load gene expressions
+// 5. Fill expression lists: Merge all the partial expression lists
 // The loaded data can be saved to database between steps
 
 // Class for loading experiment data from files
@@ -57,6 +58,11 @@ public class ExperimentInputService {
 
     public void loadAndSaveExpressions(Project p, Experiment e) throws Exception {
         matrixDao.readMatrix(p, e, 2000000L);
+    }
+
+    public void fillExpressionLists(Experiment e) {
+        cellExpressionListDao.fillExpressionList();
+        geneExpressionListDao.fillExpressionList();
     }
 
     // Loads cell objects into an experiment

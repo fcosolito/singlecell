@@ -1,5 +1,6 @@
 package com.lifescs.singlecell.dao.model;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -26,26 +27,15 @@ public class ExperimentDao {
     private MongoTemplate mongoTemplate;
     private SampleRepository sampleRepository;
     private ExperimentRepository experimentRepository;
-    private CellRepository cellRepository;
-    private ResolutionRepository resolutionRepository;
-    private ClusterRepository clusterRepository;
+    private CellDao cellDao;
+    private ResolutionDao resolutionDao;
 
     // Does not save Cell expressions
     public Experiment saveExperimentDeep(Experiment e) {
-        e.getResolutions().stream()
-                .forEach(r -> {
-                    saveResolution(r);
-                    log.info("Saving resolution: " + r.getId());
-                });
-        e.getSamples().stream()
-                .forEach(s -> {
-                    saveSample(s);
-                    log.info("Saving sample: " + s.getId());
-                });
-        e.getCells().stream()
-                .forEach(c -> {
-                    saveCell(c);
-                });
+        log.info("Saving experiment " + e.getName());
+        resolutionDao.saveResolutions(e.getResolutions());
+        saveSamples(e.getSamples());
+        cellDao.saveCells(e.getCells());
         return experimentRepository.save(e);
     }
 
@@ -54,25 +44,9 @@ public class ExperimentDao {
         return experimentRepository.save(e);
     }
 
-    public Cell saveCell(Cell c) {
-        return cellRepository.save(c);
-    }
+    public void saveSamples(List<Sample> sl) {
+        sampleRepository.saveAll(sl);
 
-    public Cluster saveCluster(Cluster cl) {
-        return clusterRepository.save(cl);
-    }
-
-    public Sample saveSample(Sample s) {
-        return sampleRepository.save(s);
-
-    }
-
-    public Resolution saveResolution(Resolution r) {
-        r.getClusters().stream()
-                .forEach(c -> {
-                    saveCluster(c);
-                });
-        return resolutionRepository.save(r);
     }
 
     public Optional<Sample> findSampleByName(String name) {
@@ -83,7 +57,4 @@ public class ExperimentDao {
         return experimentRepository.findById(id);
     }
 
-    public Optional<Cluster> findClusterById(String id) {
-        return clusterRepository.findById(id);
-    }
 }

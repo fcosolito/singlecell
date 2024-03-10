@@ -6,8 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.dao.model.PlotDao;
 import com.lifescs.singlecell.dto.api.HeatmapDto;
-import com.lifescs.singlecell.dto.api.LowDimentionalDtoByGene;
-import com.lifescs.singlecell.dto.api.LowDimentionalDtoByResolution;
+import com.lifescs.singlecell.dto.api.LowDimensionalDto;
 import com.lifescs.singlecell.dto.api.ViolinDto;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Resolution;
@@ -21,12 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 public class PlotService {
     private PlotDao plotDao;
 
-    public LowDimentionalDtoByGene getLowDimentionalDtoByGeneCodes(Experiment e, List<String> geneCodes) {
-        return plotDao.getLowDimentionalDtoByGeneCodes(e, geneCodes);
+    public LowDimensionalDto getLowDimensionalDtoByGeneCodes(Experiment e, List<String> geneCodes) {
+        return plotDao.getLowDimensionalDtoByGeneCodes(e, geneCodes);
     }
 
-    public LowDimentionalDtoByResolution getLowDimentionalDtoByResolution(Experiment e, Resolution r) {
-        return plotDao.getLowDimentionalDtoByResolution2(e, r);
+    public LowDimensionalDto getLowDimensionalDtoByResolution(Experiment e, Resolution r) {
+        return plotDao.getLowDimensionalDtoByResolution2(e, r);
     }
 
     public List<HeatmapDto> getHeatmapDtos(Resolution r) {

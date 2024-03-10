@@ -1,6 +1,7 @@
 package com.lifescs.singlecell.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CellService {
     private CellDao cellDao;
+
+    public Optional<Cell> findCellById(String cellId) {
+        return cellDao.findCellById(cellId);
+    }
 
     public List<Cluster> getCellClusters(Cell c) {
         return cellDao.getCellClusters(c);

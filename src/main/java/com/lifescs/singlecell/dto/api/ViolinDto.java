@@ -6,7 +6,6 @@ import java.util.List;
 import com.lifescs.singlecell.model.GeneExpression;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
