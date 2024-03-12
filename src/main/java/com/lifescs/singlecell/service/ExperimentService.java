@@ -8,7 +8,6 @@ import com.lifescs.singlecell.dao.model.ExperimentDao;
 import com.lifescs.singlecell.model.Experiment;
 
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @AllArgsConstructor

@@ -1,4 +1,4 @@
-package com.lifescs.singlecell.dto.csv;
+package com.lifescs.singlecell.dto.input;
 
 import com.opencsv.bean.CsvBindByName;
 

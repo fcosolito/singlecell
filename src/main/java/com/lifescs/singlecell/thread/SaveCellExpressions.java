@@ -3,7 +3,7 @@ package com.lifescs.singlecell.thread;
 import java.util.List;
 
 import com.lifescs.singlecell.dao.model.CellExpressionListDao;
-import com.lifescs.singlecell.dto.csv.GeneExpressionDto;
+import com.lifescs.singlecell.dto.input.GeneExpressionDto;
 import com.lifescs.singlecell.model.Experiment;
 
 import lombok.AllArgsConstructor;

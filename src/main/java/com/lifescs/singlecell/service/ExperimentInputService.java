@@ -15,10 +15,11 @@ import com.lifescs.singlecell.dao.input.GeneExpressionMatrixInputDao;
 import com.lifescs.singlecell.dao.input.MarkerGeneInputDao;
 import com.lifescs.singlecell.dao.model.CellExpressionListDao;
 import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
-import com.lifescs.singlecell.dto.csv.CellMetadataInputDto;
-import com.lifescs.singlecell.dto.csv.GeneExpressionMatrixInputDto;
-import com.lifescs.singlecell.dto.csv.MarkerGeneInputDto;
+import com.lifescs.singlecell.dto.input.CellMetadataInputDto;
+import com.lifescs.singlecell.dto.input.LoadedMetadataDto;
+import com.lifescs.singlecell.dto.input.MarkerGeneInputDto;
 import com.lifescs.singlecell.model.Cell;
+import com.lifescs.singlecell.model.CellCluster;
 import com.lifescs.singlecell.model.CellExpression;
 import com.lifescs.singlecell.model.CellExpressionList;
 import com.lifescs.singlecell.model.Cluster;
@@ -53,29 +54,34 @@ public class ExperimentInputService {
     private GeneExpressionMatrixInputDao matrixDao;
     private CellMetadataInputDao metadataDao;
     private MarkerGeneInputDao markersDao;
-    private GeneExpressionListDao geneExpressionListDao;
-    private CellExpressionListDao cellExpressionListDao;
+    private ResolutionService resolutionService;
 
     public void loadAndSaveExpressions(Project p, Experiment e) throws Exception {
         matrixDao.readMatrix(p, e, 2000000L);
     }
 
+    // TODO
     public void fillExpressionLists(Experiment e) {
-        cellExpressionListDao.fillExpressionList();
-        geneExpressionListDao.fillExpressionList();
+        // cellExpressionListDao.fillExpressionList();
+        // geneExpressionListDao.fillExpressionList();
     }
 
+    // TODO return a dto with cells, samples, clusters, etc to save them
     // Loads cell objects into an experiment
-    public void loadCellsMetadata(Project p, Experiment experiment) throws Exception {
+    public LoadedMetadataDto loadCellsMetadata(Project p, Experiment experiment) throws Exception {
         log.info("Loading cells for experiment: " + experiment.getName());
+        LoadedMetadataDto loadedDto = new LoadedMetadataDto();
         for (CellMetadataInputDto dto : metadataDao.readCSVToMetadataBeans(p, experiment)) {
-            loadCellMetadata(dto, experiment);
+            loadedDto.getCells().add(loadCellMetadata(dto, experiment, loadedDto.getSamples(),
+                    loadedDto.getResolutions(), loadedDto.getClusters()));
         }
+        return loadedDto;
     }
 
-    private Cell loadCellMetadata(CellMetadataInputDto dto, Experiment experiment) throws Exception {
+    private Cell loadCellMetadata(CellMetadataInputDto dto, Experiment experiment, List<Sample> samples,
+            List<Resolution> resolutions, List<Cluster> clusters) throws Exception {
         Cell cell = new Cell();
-        cell.setId(experiment.getId() + dto.getId().toString());
+        // cell.setId(experiment.getId() + dto.getId().toString());
         cell.setLocalId(dto.getId());
         cell.setCellNameHigh(dto.getCellNameHigh());
         cell.setCellNameLow(dto.getCellNameLow());
@@ -88,15 +94,19 @@ public class ExperimentInputService {
         cell.setUmap2(dto.getUmap2());
         cell.setTsne1(dto.getTsne1());
         cell.setTsne2(dto.getTsne2());
-        cell.setSample(experiment.getSamples().stream()
+        cell.setSample(samples.stream()
                 .filter(s -> s.getName().equals(dto.getSample()))
-                .findFirst().orElseGet(() -> addSample(dto.getSample(), experiment)));
+                .findFirst().orElseGet(() -> {
+                    Sample newSample = new Sample(dto.getSample());
+                    samples.add(newSample);
+                    return newSample;
+                }));
         cell.setNumberOfUMIs(dto.getNumberOfUMIs());
         cell.setNumberOfgenes(dto.getNumberOfGenes());
         cell.setPercentOfMitochondrialGenes(dto.getPercentOfMitochondrialGenes());
 
         // Set cell clusters
-        List<Cluster> cs = new ArrayList<>();
+        List<CellCluster> cs = new ArrayList<>();
         for (Entry<String, String> entry : dto.getClusters().entries()) {
             String resolutionName;
             String clusterName;
@@ -104,31 +114,44 @@ public class ExperimentInputService {
             Cluster cluster;
             resolutionName = entry.getKey();
             clusterName = entry.getValue();
-            resolution = experiment.getResolutions().stream()
+            resolution = resolutions.stream()
                     .filter(r -> r.getName().equals(resolutionName))
-                    .findFirst().orElseGet(() -> addResolution(resolutionName, experiment));
-            cluster = resolution.getClusters().stream()
-                    .filter(c -> c.getName().equals(clusterName))
-                    .findFirst().orElseGet(() -> addCluster(clusterName, resolution));
-            cluster.setResolution(resolution);
-            cs.add(cluster);
-        }
-        cell.setClusterIds(cs.stream().map(c -> c.getId()).toList());
+                    .findFirst().orElseGet(() -> {
+                        Resolution newResolution = new Resolution(resolutionName, experiment);
+                        resolutions.add(newResolution);
+                        return newResolution;
+                    });
+            cluster = clusters.stream()
+                    .filter(c -> c.getName().equals(clusterName)
+                            & c.getResolution().getName().equals(resolution.getName()))
+                    .findFirst().orElseGet(() -> {
+                        Cluster newCluster = new Cluster(clusterName, resolution);
+                        newCluster.setResolution(resolution);
+                        clusters.add(newCluster);
+                        return newCluster;
+                    });
 
-        experiment.getCells().add(cell);
+            CellCluster cc = new CellCluster();
+            cc.setCluster(cluster);
+            cc.setResolution(resolution);
+            cs.add(cc);
+        }
+        cell.setCellClusters(cs);
+
         return cell;
 
     }
 
     // Loads marker genes into the clusters of the experiment
-    public void loadMarkers(Project p, Experiment e) throws Exception {
+    public List<Cluster> loadMarkers(Project p, Experiment e, List<Cluster> clusters) throws Exception {
         log.info("Loading marker genes from file");
         for (MarkerGeneInputDto dto : markersDao.readCSVToMetadataBeans(p, e)) {
-            loadMarkerGene(dto, e);
+            loadMarkerGene(dto, clusters);
         }
+        return clusters;
     }
 
-    private MarkerGene loadMarkerGene(MarkerGeneInputDto dto, Experiment experiment)
+    private MarkerGene loadMarkerGene(MarkerGeneInputDto dto, List<Cluster> clusters)
             throws RuntimeException { // TODO add custom exceptions
         MarkerGene marker = new MarkerGene();
         marker.setGeneCode(dto.getGeneCode());
@@ -137,36 +160,15 @@ public class ExperimentInputService {
         marker.setAdjacentPValue(dto.getAdjacentPValue());
         marker.setPercent1(dto.getPercent1());
         marker.setPercent2(dto.getPercent2());
-        Cluster cluster = experiment.getResolutions().stream()
-                .map(r -> r.getClusters()).flatMap(List::stream)
-                .filter(c -> c.getId()
-                        // TODO change how these are matched
-                        .equals((experiment.getId() + dto.getResolution() + dto.getCluster()))) //
-                .findFirst().orElseThrow(() -> new RuntimeException("Cluster not found: " + dto.getResolution() +
+        Cluster cluster = clusters.stream()
+                .filter(c -> c.getName().equals(dto.getCluster())
+                        & c.getResolution().getName().equals(dto.getResolution()))
+                .findFirst().orElseThrow(() -> new RuntimeException("Cluster not found: " + dto.getResolution() + " " +
                         dto.getCluster()));
 
         cluster.getMarkers().add(marker);
         return marker;
 
-    }
-
-    private Sample addSample(String name, Experiment experiment) {
-        Sample s = new Sample(name);
-        experiment.getSamples().add(s);
-        return s;
-
-    }
-
-    private Resolution addResolution(String name, Experiment experiment) {
-        Resolution r = new Resolution(name, experiment);
-        experiment.getResolutions().add(r);
-        return r;
-    }
-
-    private Cluster addCluster(String name, Resolution resolution) {
-        Cluster c = new Cluster(name, resolution);
-        resolution.getClusters().add(c);
-        return c;
     }
 
 }

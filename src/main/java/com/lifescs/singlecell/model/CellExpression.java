@@ -8,6 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CellExpression {
-    private String cellId;
+    private String code;
     private Double expression;
 }

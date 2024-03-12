@@ -3,10 +3,9 @@ package com.lifescs.singlecell.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.DocumentReference;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import lombok.Getter;
@@ -20,13 +19,12 @@ public class Cluster {
     private String id;
     @Field
     private String name;
-    @DocumentReference
+    @DBRef
     private Resolution resolution;
     @Field
     private List<MarkerGene> markers;
-    @Field
-    private ObjectId heatmapClusterId;
 
+    // TODO let mongo set the id
     public Cluster(String name, Resolution resolution) {
         this.name = name;
         this.resolution = resolution;

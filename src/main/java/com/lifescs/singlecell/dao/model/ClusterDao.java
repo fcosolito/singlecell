@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
 import com.lifescs.singlecell.model.Cluster;
+import com.lifescs.singlecell.model.Experiment;
 
 import lombok.AllArgsConstructor;
 
@@ -23,6 +24,11 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ClusterDao {
         private MongoTemplate mongoTemplate;
+
+        // TODO
+        public List<Cluster> findClustersByExperiment(Experiment experiment) {
+                return null;
+        }
 
         public List<HeatmapClusterLoadDto> getMarkerExpressionsForCluster(Cluster c,
                         List<String> geneCodes)

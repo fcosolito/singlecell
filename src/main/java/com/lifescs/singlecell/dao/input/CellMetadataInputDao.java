@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.lifescs.singlecell.dto.csv.CellMetadataInputDto;
+import com.lifescs.singlecell.dto.input.CellMetadataInputDto;
 import com.lifescs.singlecell.mapper.PathMapper;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Project;

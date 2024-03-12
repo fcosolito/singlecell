@@ -6,6 +6,8 @@ import java.util.List;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -15,10 +17,14 @@ import lombok.Setter;
 @Getter
 @Setter
 @Document
-@CompoundIndex(name = "expression_genecode", def = "{'geneExpressions.geneCode':1}")
+@CompoundIndexes(@CompoundIndex(name = "experiment_code", def = "{'experiment.id' : 1, 'code' : 1}"))
 public class GeneExpressionList {
     @Id
-    private ObjectId id;
+    private String id;
+    @Field
+    private String code;
+    @DBRef
+    private Experiment experiment;
     @Field
     private List<GeneExpression> geneExpressions;
 
@@ -26,7 +32,7 @@ public class GeneExpressionList {
         this.geneExpressions = new ArrayList<>();
     }
 
-    public GeneExpressionList(ObjectId id) {
+    public GeneExpressionList(String id) {
         this.geneExpressions = new ArrayList<>();
         this.id = id;
     }

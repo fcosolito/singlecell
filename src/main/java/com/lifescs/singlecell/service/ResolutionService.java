@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
+import com.lifescs.singlecell.dao.model.ClusterDao;
 import com.lifescs.singlecell.dao.model.HeatmapClusterDao;
 import com.lifescs.singlecell.dao.model.ResolutionDao;
 import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
@@ -28,9 +29,15 @@ import lombok.extern.slf4j.Slf4j;
 public class ResolutionService {
     private ResolutionDao resolutionDao;
     private HeatmapClusterDao heatmapClusterDao;
+    private ClusterDao clusterDao;
 
     public Optional<Resolution> findResolutionById(String resolutionId) {
         return resolutionDao.findResolutionById(resolutionId);
+    }
+
+    public List<Cluster> findClustersByExperiment(Experiment experiment) {
+        return clusterDao.findClustersByExperiment(experiment);
+
     }
 
     // Should be used with 'addHeatmapClustersForResolution' output

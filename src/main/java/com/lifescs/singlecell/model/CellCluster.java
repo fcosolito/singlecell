@@ -2,16 +2,14 @@ package com.lifescs.singlecell.model;
 
 import org.springframework.data.mongodb.core.mapping.DBRef;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
-@AllArgsConstructor
-public class GeneExpression {
+public class CellCluster {
     @DBRef
-    private Cell cell;
-    private Double expression;
-
+    private Cluster cluster;
+    @DBRef
+    private Resolution resolutlon;
 }

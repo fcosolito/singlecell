@@ -1,4 +1,4 @@
-package com.lifescs.singlecell.dto.csv;
+package com.lifescs.singlecell.dto.input;
 
 import org.apache.commons.collections4.MultiValuedMap;
 

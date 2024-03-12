@@ -1,6 +1,7 @@
 package com.lifescs.singlecell.model;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -20,6 +21,8 @@ public class Sample {
     @EqualsAndHashCode.Include
     @Field
     private String name;
+    @DBRef
+    private Experiment experiment;
 
     public Sample(String name) {
         this.name = name;

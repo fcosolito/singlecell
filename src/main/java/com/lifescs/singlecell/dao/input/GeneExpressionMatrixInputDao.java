@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.dao.model.CellExpressionListDao;
 import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
-import com.lifescs.singlecell.dto.csv.GeneExpressionDto;
-import com.lifescs.singlecell.dto.csv.GeneExpressionMatrixInputDto;
-import com.lifescs.singlecell.dto.csv.GeneMapDto;
+import com.lifescs.singlecell.dto.input.GeneExpressionDto;
+import com.lifescs.singlecell.dto.input.GeneExpressionMatrixInputDto;
+import com.lifescs.singlecell.dto.input.GeneMapDto;
 import com.lifescs.singlecell.mapper.PathMapper;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Project;
@@ -34,14 +34,12 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
     private CellExpressionListDao cellExpressionListDao;
     private PathMapper pathMapper;
 
-    // Reads the .mtx matrix file into a dto, gets path from mapper
-    // TODO add chunk size: read N lines
     public void readMatrix(Project p, Experiment e, Long chunckSize) throws Exception {
         // Create an expression list for each cell in the experiment
-        geneExpressionListDao.startExpressionLoad(e, readGeneMapping(p, e));
+        cellExpressionListDao.startExpressionLoad(e, readGeneMapping(p, e));
 
         // Create an expression list for each gene in the gene map
-        cellExpressionListDao.startExpressionLoad(e, readGeneMapping(p, e));
+        geneExpressionListDao.startExpressionLoad(e, readGeneMapping(p, e));
 
         log.info("Reading Matrix file with chunk size: " + chunckSize / 1_000_000.0 + "M lines");
         try (BufferedReader bufferedReader = new BufferedReader(
@@ -59,7 +57,7 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
             int chunkCount = 0;
             long lineCount = 0;
             long start = System.nanoTime();
-            int poolSize = 4;
+            // int poolSize = 4;
             // ExecutorService service = Executors.newFixedThreadPool(poolSize);
             while ((line = bufferedReader.readLine()) != null) {
                 GeneExpressionDto ge = new GeneExpressionDto();

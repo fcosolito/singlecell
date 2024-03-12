@@ -5,8 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class Protein {
-    private String proteinCode;
-    private Double expression;
-
+public class ExpressionType {
+    private String code;
 }
