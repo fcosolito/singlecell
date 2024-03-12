@@ -68,7 +68,9 @@ public class PlotDao {
 
                 LowDimensionalDto result = new LowDimensionalDto();
 
-                List<Cell> cells = e.getCells();
+                //List<Cell> cells = e.getCells();
+                // TODO QUERY experiment cells
+                List<Cell> cells = null;
                 Map<String, Double> expressionSumsMap = expressionSums.stream()
                                 .collect(Collectors.toMap(es -> es.id, es -> es.sumOfExpressions));
                 cells.stream().forEach(cell -> {
@@ -278,6 +280,7 @@ public class PlotDao {
                 if (result.isEmpty())
                         throw new NoObjectFoundException("Could not get violin dtos for experiment: " + e.getId());
                 else {
+                        /* 
                         List<ViolinDto> resultDtos = result.stream().map(dto -> {
                                 ViolinDto resultDto = new ViolinDto();
                                 resultDto.setClusterId(dto.getClusterId());
@@ -301,7 +304,9 @@ public class PlotDao {
                                 return resultDto;
                         }).toList();
                         log.info("Completed query in " + (end - start) / 1_000_000_000.0 + " seconds");
-                        return resultDtos;
+                        */
+                        //return resultDtos;
+                        return null;
 
                 }
         }

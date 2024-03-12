@@ -12,9 +12,7 @@ import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dto.query.TopMarkerDto;
-import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Resolution;
-import com.lifescs.singlecell.repository.ClusterRepository;
 import com.lifescs.singlecell.repository.ResolutionRepository;
 
 import lombok.AllArgsConstructor;

@@ -54,8 +54,9 @@ public class CellExpressionListDao {
 
     public void startExpressionLoad(Experiment e, Map<Integer, String> geneMap) {
         this.inputId2Partial = new HashMap<>();
-        // TODO get cells
-        List<Cell> cells = e.getCells();
+        // TODO QUERY get cells
+        //List<Cell> cells = e.getCells();
+        List<Cell> cells = null;
         cells.forEach(c -> {
             PartialCellExpressionList partial = new PartialCellExpressionList();
             partial.setCell(c);

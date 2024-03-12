@@ -53,6 +53,7 @@ public class ExperimentController {
 
     }
 
+    /* 
     @CrossOrigin
     @GetMapping("/experiment/save_heatmap_clusters")
     public void saveHeatmapClusters() throws Exception {
@@ -64,6 +65,7 @@ public class ExperimentController {
         experimentService.saveHeatmapClusters(list);
         experimentService.saveExperimentDeep(e);
     }
+    */
 
     @CrossOrigin
     @GetMapping("/experiment/clean")
@@ -75,7 +77,7 @@ public class ExperimentController {
     @GetMapping("/experiment/fill_expressions")
     public void fillExpressionList() throws Exception {
         Experiment e = experimentService.findExperimentById("exp2").get();
-        experimentService.fillExpressionLists(e);
+        //experimentService.fillExpressionLists(e);
     }
 
 }

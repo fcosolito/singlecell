@@ -36,9 +36,33 @@ public class ClusterDao {
                 return (List<Cluster>) clusterRepository.saveAll(cl);
         }
 
-        // TODO
+        // TODO test it
         public List<Cluster> findClustersByExperiment(Experiment experiment) {
-                return null;
+                LookupOperation lookupResolution = Aggregation.lookup(
+                        "resolution", 
+                        "resolution.$id", 
+                        "_id",
+                        "resolutionInfo");
+
+                MatchOperation matchExperiment = Aggregation.match(
+                        Criteria.where("resolutionInfo.experiment.$id")
+                        .is(experiment.getId())
+                );
+
+                ProjectionOperation projectCluster = Aggregation.project(
+                        "id", "name", "markers", "resolution"
+                );
+
+                Aggregation aggregation = Aggregation.newAggregation(
+                        lookupResolution,
+                        matchExperiment,
+                        projectCluster
+                );
+
+                List<Cluster> result = mongoTemplate.aggregate(aggregation, "cluster", Cluster.class).getMappedResults();
+                if (result.isEmpty())
+                        throw new NoObjectFoundException("Clusters not found for experiment: " + experiment.getId());
+                return result;
         }
 
         public List<HeatmapClusterLoadDto> getMarkerExpressionsForCluster(Cluster c,

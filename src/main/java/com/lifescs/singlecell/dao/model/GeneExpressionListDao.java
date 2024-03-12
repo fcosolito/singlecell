@@ -56,9 +56,10 @@ public class GeneExpressionListDao {
             partial.setCode(entry.getValue());
             this.inputId2Partial.put(entry.getKey(), partial);
         }
-        // TODO Find cells for the given experiment
-        this.inputId2Cell = e.getCells().stream()
-                .collect(Collectors.toMap(cell -> cell.getLocalId(), cell -> cell));
+        // TODO QUERY Find cells for the given experiment
+        //this.inputId2Cell = e.getCells().stream()
+                //.collect(Collectors.toMap(cell -> cell.getLocalId(), cell -> cell));
+        this.inputId2Cell = null;
     }
 
     public void endExpressionLoad() {

@@ -33,12 +33,13 @@ public class PlotDtoController {
     @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/plots/low_dimensional/by_resolution")
     public LowDimensionalDto getDtoByResolution() {
-        Experiment testExperiment = experimentService.findExperimentById("exp1").get();
-        Resolution testResolution = experimentService.findResolutionById("exp1cluster_0.20").get();
-        LowDimensionalDto dto = plotService.getLowDimensionalDtoByResolution(testExperiment,
-                testResolution);
+        //Experiment testExperiment = experimentService.findExperimentById("exp1").get();
+        //Resolution testResolution = experimentService.findResolutionById("exp1cluster_0.20").get();
+        //LowDimensionalDto dto = plotService.getLowDimensionalDtoByResolution(testExperiment,
+                //testResolution);
         // log.info(dto.getClusterNames().toString());
-        return dto;
+        //return dto;
+        return null;
     }
 
     @CrossOrigin(origins = "http://localhost:3000")
@@ -74,7 +75,8 @@ public class PlotDtoController {
         List<String> searchList = new ArrayList<>();
         searchList.add("Tram1");
         searchList.add("Vcpip1");
-        return plotService.getViolinDtos(e, e.getResolutions().get(3), searchList);
+        //return plotService.getViolinDtos(e, e.getResolutions().get(3), searchList);
+        return null;
 
     }
     // @ExceptionHandler

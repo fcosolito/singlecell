@@ -15,7 +15,6 @@ import org.springframework.stereotype.Component;
 import com.lifescs.singlecell.dao.model.CellExpressionListDao;
 import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
 import com.lifescs.singlecell.dto.input.GeneExpressionDto;
-import com.lifescs.singlecell.dto.input.GeneExpressionMatrixInputDto;
 import com.lifescs.singlecell.dto.input.GeneMapDto;
 import com.lifescs.singlecell.mapper.PathMapper;
 import com.lifescs.singlecell.model.Experiment;
