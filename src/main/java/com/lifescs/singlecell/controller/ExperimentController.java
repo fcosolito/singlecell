@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.lifescs.singlecell.dto.input.LoadedMetadataDto;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.HeatmapCluster;
 import com.lifescs.singlecell.model.Project;
@@ -37,19 +38,14 @@ public class ExperimentController {
         Project p = new Project("Example project");
         p.setId("proj1");
         Experiment e = new Experiment("Example experiment");
-        e.setId("exp2");
-        p.getExperiments().add(e);
+        e.setId("exp1");
+        e.setProject(p);
         // Experiment e = experimentService.findExperimentById("exp1").get();
 
-        experimentInputService.loadCellsMetadata(p, e);
-        experimentInputService.loadMarkers(p, e);
         long start = System.nanoTime();
-        // experimentService.saveGeneExpressionLists(experimentInputService.loadGeneExpressions(p,
-        // e));
-        // experimentService.saveCellExpressionLists(experimentInputService.loadCellExpressions(p,
-        // e));
-        experimentInputService.loadAndSaveExpressions(p, e);
-        experimentService.saveExperimentDeep(e);
+        LoadedMetadataDto loadedMetadataDto = experimentInputService.loadCellsMetadata(p, e);
+        experimentInputService.loadMarkers(p, e, loadedMetadataDto.getClusters());
+        experimentInputService.saveLoadedExperiment(e, loadedMetadataDto);
         long end = System.nanoTime();
         log.info("Elapsed time: " + (end - start) / 1_000_000_000.0 + " seconds");
 

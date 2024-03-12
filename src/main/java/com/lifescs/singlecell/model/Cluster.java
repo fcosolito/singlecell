@@ -24,16 +24,10 @@ public class Cluster {
     @Field
     private List<MarkerGene> markers;
 
-    // TODO let mongo set the id
     public Cluster(String name, Resolution resolution) {
         this.name = name;
         this.resolution = resolution;
         this.markers = new ArrayList<>();
-        this.id = resolution.getId() + name;
-    }
-
-    public String toString() {
-        return "Cluster :" + id + " res: ";
     }
 
 }

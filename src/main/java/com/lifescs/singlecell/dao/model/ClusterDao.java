@@ -1,6 +1,7 @@
 package com.lifescs.singlecell.dao.model;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -17,6 +18,7 @@ import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.repository.ClusterRepository;
 
 import lombok.AllArgsConstructor;
 
@@ -24,6 +26,15 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ClusterDao {
         private MongoTemplate mongoTemplate;
+        private ClusterRepository clusterRepository;
+
+        public Optional<Cluster> findClusterById(String id) {
+                return clusterRepository.findById(id);
+        }
+
+        public List<Cluster> saveClusters(List<Cluster> cl) {
+                return (List<Cluster>) clusterRepository.saveAll(cl);
+        }
 
         // TODO
         public List<Cluster> findClustersByExperiment(Experiment experiment) {

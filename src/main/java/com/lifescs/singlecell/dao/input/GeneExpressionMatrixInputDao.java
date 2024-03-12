@@ -69,11 +69,8 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
                 lineCount++;
                 if (lineCount >= chunckSize) {
                     log.info("Processing chunk: " + chunkCount);
-                    // service.execute(new SaveCellExpressions(cellExpressionListDao, e,
-                    // expressionList));
-                    // service.execute(new SaveGeneExpressions(geneExpressionListDao, e,
-                    // expressionList));
-                    // process expression list
+
+                    // Create threads to load gene and cell expressions in parallel
                     Thread geneThread = new Thread(new SaveGeneExpressions(geneExpressionListDao,
                             e, expressionList));
                     geneThread.start();

@@ -11,5 +11,5 @@ public class CellCluster {
     @DBRef
     private Cluster cluster;
     @DBRef
-    private Resolution resolutlon;
+    private Resolution resolution;
 }

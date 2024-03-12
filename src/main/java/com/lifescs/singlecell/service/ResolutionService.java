@@ -45,6 +45,14 @@ public class ResolutionService {
         heatmapClusterDao.saveAll(list);
     }
 
+    public void saveResolutions(List<Resolution> resolutions) {
+        resolutionDao.saveResolutions(resolutions);
+    }
+
+    public void saveClusters(List<Cluster> clusters) {
+        clusterDao.saveClusters(clusters);
+    }
+
     // Create HeatmapClusters used to draw heatmaps
     public List<HeatmapCluster> addHeatmapClustersForResolution(Experiment e, Resolution r, Integer nBuckets,
             Integer markersPerCluster)

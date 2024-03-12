@@ -26,28 +26,17 @@ import lombok.extern.slf4j.Slf4j;
 public class ResolutionDao {
     private MongoTemplate mongoTemplate;
     private ResolutionRepository resolutionRepository;
-    private ClusterRepository clusterRepository;
 
     public Optional<Resolution> findResolutionById(String id) {
         return resolutionRepository.findById(id);
     }
 
-    public Optional<Cluster> findClusterById(String id) {
-        return clusterRepository.findById(id);
-    }
-
-    public List<Cluster> saveClusters(List<Cluster> cl) {
-        return (List<Cluster>) clusterRepository.saveAll(cl);
-    }
-
-    public Resolution saveResolution(Resolution r) {
-        log.info("Saving resolution: " + r.getId());
-        saveClusters(r.getClusters());
-        return resolutionRepository.save(r);
+    public void saveResolution(Resolution r) {
+        resolutionRepository.save(r);
     }
 
     public void saveResolutions(List<Resolution> rl) {
-        rl.forEach(r -> saveResolution(r));
+        resolutionRepository.saveAll(rl);
     }
 
     public List<TopMarkerDto> getTopMarkers(Resolution r, Integer markersPerCluster) {

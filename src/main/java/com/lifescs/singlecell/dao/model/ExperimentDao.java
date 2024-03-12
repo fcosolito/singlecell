@@ -27,17 +27,6 @@ public class ExperimentDao {
     private MongoTemplate mongoTemplate;
     private SampleRepository sampleRepository;
     private ExperimentRepository experimentRepository;
-    private CellDao cellDao;
-    private ResolutionDao resolutionDao;
-
-    // Does not save Cell expressions
-    public Experiment saveExperimentDeep(Experiment e) {
-        log.info("Saving experiment " + e.getName());
-        resolutionDao.saveResolutions(e.getResolutions());
-        saveSamples(e.getSamples());
-        cellDao.saveCells(e.getCells());
-        return experimentRepository.save(e);
-    }
 
     // Does not update any referenced objects
     public Experiment saveExperiment(Experiment e) {

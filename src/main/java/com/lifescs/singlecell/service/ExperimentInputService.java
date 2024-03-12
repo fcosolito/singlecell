@@ -55,9 +55,29 @@ public class ExperimentInputService {
     private CellMetadataInputDao metadataDao;
     private MarkerGeneInputDao markersDao;
     private ResolutionService resolutionService;
+    private ExperimentService experimentService;
 
     public void loadAndSaveExpressions(Project p, Experiment e) throws Exception {
         matrixDao.readMatrix(p, e, 2000000L);
+    }
+
+    public void saveLoadedExperiment(Experiment e, LoadedMetadataDto dto) {
+        // Consider ids are created by mongo when ordering saves
+        log.info("Saving loaded experiment");
+        experimentService.saveExperiment(e);
+
+        log.info("Saving loaded samples");
+        experimentService.saveSamples(dto.getSamples());
+
+        log.info("Saving loaded resolutions");
+        resolutionService.saveResolutions(dto.getResolutions());
+
+        log.info("Saving loaded clusters");
+        resolutionService.saveClusters(dto.getClusters());
+
+        log.info("Saving loaded cells");
+        experimentService.saveCells(dto.getCells());
+
     }
 
     // TODO
@@ -98,6 +118,7 @@ public class ExperimentInputService {
                 .filter(s -> s.getName().equals(dto.getSample()))
                 .findFirst().orElseGet(() -> {
                     Sample newSample = new Sample(dto.getSample());
+                    newSample.setExperiment(experiment);
                     samples.add(newSample);
                     return newSample;
                 }));

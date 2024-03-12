@@ -5,6 +5,7 @@ import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -21,10 +22,8 @@ public class Resolution {
     @DBRef
     private Experiment experiment;
 
-    // TODO let mongo generate the id
     public Resolution(String name, Experiment experiment) {
         this.name = name;
-        this.id = experiment.getId() + name;
+        this.experiment = experiment;
     }
-
 }

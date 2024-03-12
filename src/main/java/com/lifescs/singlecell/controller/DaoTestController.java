@@ -22,15 +22,17 @@ public class DaoTestController {
     private ExperimentService experimentService;
     private PlotDao plotDao;
 
-    @GetMapping("/test/geneCodes2")
-    public List<ViolinDto> getMethodName() {
-        Experiment e = experimentService.findExperimentById("exp1").get();
-        List<String> searchList = new ArrayList<>();
-        searchList.add("Vcpip1");
-        searchList.add("Tram1");
-        searchList.add("Naaa");
-        searchList.add("Tubab1");
-        return plotDao.getViolinDtos(e, e.getResolutions().get(3), searchList);
-    }
+    /*
+     * @GetMapping("/test/geneCodes2")
+     * public List<ViolinDto> getMethodName() {
+     * Experiment e = experimentService.findExperimentById("exp1").get();
+     * List<String> searchList = new ArrayList<>();
+     * searchList.add("Vcpip1");
+     * searchList.add("Tram1");
+     * searchList.add("Naaa");
+     * searchList.add("Tubab1");
+     * return plotDao.getViolinDtos(e, e.getResolutions().get(3), searchList);
+     * }
+     */
 
 }
