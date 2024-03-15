@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.dao.input.CellMetadataInputDao;
+import com.lifescs.singlecell.dao.input.ExpressionInputDao;
 import com.lifescs.singlecell.dao.input.GeneExpressionMatrixInputDao;
 import com.lifescs.singlecell.dao.input.MarkerGeneInputDao;
 import com.lifescs.singlecell.dao.model.CellExpressionListDao;
@@ -50,9 +51,12 @@ public class ExperimentInputService {
     private ExperimentService experimentService;
     private GeneExpressionListDao geneExpressionListDao;
     private CellExpressionListDao cellExpressionListDao;
+    private ExpressionInputDao expressionInputDao;
 
     public void loadAndSaveExpressions(Project p, Experiment e) throws Exception {
-        matrixDao.readMatrix(p, e, 500000L);
+        //matrixDao.readMatrix(p, e, 500000L);
+        expressionInputDao.loadCellExpressions(p, e);
+        expressionInputDao.loadGeneExpressions(p, e);
     }
 
     public void saveLoadedExperiment(Experiment e, LoadedMetadataDto dto) {

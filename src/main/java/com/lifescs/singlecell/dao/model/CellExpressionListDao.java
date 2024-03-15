@@ -45,6 +45,10 @@ public class CellExpressionListDao {
         private Map<Integer, PartialCellExpressionList> inputId2Partial;
         private Map<Integer, String> inputId2Code;
 
+        public void save(CellExpressionList list){
+                repository.save(list);
+        }
+
         public List<CellExpressionList> findListsByExperiment(Experiment e) {
                 LookupOperation lookupCell = Aggregation.lookup(
                                 "cell",

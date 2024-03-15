@@ -59,6 +59,10 @@ public class GeneExpressionListDao {
         repository.deleteAll(findListsByExperiment(e));
     }
 
+    public void save(GeneExpressionList list){
+        repository.save(list);
+    }
+
     public void startExpressionLoad(Experiment e, Map<Integer, String> geneMap) throws Exception {
         this.inputId2Partial = new HashMap<>();
 

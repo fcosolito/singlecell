@@ -28,10 +28,10 @@ public class GeneExpressionList {
     @DBRef
     private Experiment experiment;
     @Field
-    private List<GeneExpression> geneExpressions;
+    private List<GeneExpression> expressions;
 
     public GeneExpressionList() {
-        this.geneExpressions = new ArrayList<>();
+        this.expressions = new ArrayList<>();
     }
 
     public GeneExpressionList(String id) {

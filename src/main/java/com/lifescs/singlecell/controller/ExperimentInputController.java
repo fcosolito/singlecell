@@ -33,7 +33,6 @@ public class ExperimentInputController {
         experimentInputService.loadMarkers(p, e, loadedMetadataDto.getClusters());
         experimentInputService.saveLoadedExperiment(e, loadedMetadataDto);
         experimentInputService.loadAndSaveExpressions(p, e);
-        experimentInputService.fillExpressionLists(e);
         long end = System.nanoTime();
         log.info("Elapsed time: " + (end - start) / 1_000_000_000.0 + " seconds");
 
