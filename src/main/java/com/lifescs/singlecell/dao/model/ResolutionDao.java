@@ -8,10 +8,12 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dto.query.TopMarkerDto;
+import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.repository.ResolutionRepository;
 
@@ -23,22 +25,41 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResolutionDao {
     private MongoTemplate mongoTemplate;
-    private ResolutionRepository resolutionRepository;
+    private ResolutionRepository repository;
+    private ClusterDao clusterDao;
 
     public Optional<Resolution> findResolutionById(String id) {
-        return resolutionRepository.findById(id);
+        return repository.findById(id);
+    }
+
+    public void deleteResolution(Resolution r) {
+        log.info("Deleting resolution: " + r.getId());
+        clusterDao.deleteClustersByResolution(r);
+        repository.delete(r);
+    }
+
+    public void deleteResolutionsByExperiment(Experiment e) {
+        findResolutionsByExperiment(e).stream().forEach(
+                r -> deleteResolution(r));
+    }
+
+    public List<Resolution> findResolutionsByExperiment(Experiment e) {
+        Query query = Query.query(Criteria.where("experiment.$id").is(e.getId()));
+        return mongoTemplate.find(query, Resolution.class);
     }
 
     public void saveResolution(Resolution r) {
-        resolutionRepository.save(r);
+        repository.save(r);
     }
 
     public void saveResolutions(List<Resolution> rl) {
-        resolutionRepository.saveAll(rl);
+        repository.saveAll(rl);
     }
 
+    // TODO check if this is correct
+    // Assumes markers are ordered in descending order in each cluster
     public List<TopMarkerDto> getTopMarkers(Resolution r, Integer markersPerCluster) {
-        MatchOperation matchClusters = Aggregation.match(Criteria.where("resolution").is(r.getId()));
+        MatchOperation matchClusters = Aggregation.match(Criteria.where("resolution.$id").is(r.getId()));
 
         ProjectionOperation projectSlice = Aggregation.project()
                 .and("_id").as("clusterId")

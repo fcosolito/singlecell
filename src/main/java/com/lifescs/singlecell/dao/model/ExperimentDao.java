@@ -6,16 +6,8 @@ import java.util.Optional;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Component;
 
-import com.lifescs.singlecell.model.Cell;
-import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
-import com.lifescs.singlecell.model.Resolution;
-import com.lifescs.singlecell.model.Sample;
-import com.lifescs.singlecell.repository.CellRepository;
-import com.lifescs.singlecell.repository.ClusterRepository;
 import com.lifescs.singlecell.repository.ExperimentRepository;
-import com.lifescs.singlecell.repository.ResolutionRepository;
-import com.lifescs.singlecell.repository.SampleRepository;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,25 +17,28 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ExperimentDao {
     private MongoTemplate mongoTemplate;
-    private SampleRepository sampleRepository;
-    private ExperimentRepository experimentRepository;
+    private ExperimentRepository repository;
+    private CellDao cellDao;
+    private ResolutionDao resolutionDao;
+    private SampleDao sampleDao;
+    private GeneExpressionListDao geneExpressionListDao;
+    private CellExpressionListDao cellExpressionListDao;
 
-    // Does not update any referenced objects
     public Experiment saveExperiment(Experiment e) {
-        return experimentRepository.save(e);
-    }
-
-    public void saveSamples(List<Sample> sl) {
-        sampleRepository.saveAll(sl);
-
-    }
-
-    public Optional<Sample> findSampleByName(String name) {
-        return sampleRepository.findByName(name);
+        return repository.save(e);
     }
 
     public Optional<Experiment> findExperimentById(String id) {
-        return experimentRepository.findById(id);
+        return repository.findById(id);
+    }
+
+    public void deleteExperiment(Experiment e) {
+        sampleDao.deleteSamplesByExperiment(e);
+        cellExpressionListDao.deleteListsByExperiment(e);
+        cellDao.deleteCellsByExperiment(e);
+        geneExpressionListDao.deleteListsByExperiment(e);
+        resolutionDao.deleteResolutionsByExperiment(e);
+
     }
 
 }

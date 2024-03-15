@@ -60,10 +60,9 @@ public class ResolutionService {
         List<TopMarkerDto> dtos = resolutionDao.getTopMarkers(r, markersPerCluster);
 
         List<HeatmapCluster> result = new ArrayList<>();
-        // TODO query clusters by resolution
-        //for (Cluster c : r.getClusters()) {
-        List<Cluster> empty = null;
-        for (Cluster c : empty) {
+        List<Cluster> clusters = clusterDao.findClustersByExperiment(e);
+
+        for (Cluster c : clusters) {
             result.add(addHeatmapCluster(c, dtos, nBuckets));
         }
         return result;
@@ -74,18 +73,26 @@ public class ResolutionService {
             throws NoObjectFoundException, RuntimeException {
         log.info("Getting heatmap cluster for " + c.getId());
 
+        // All the markers for the resolution
         List<String> resolutionMarkers = markerDtos.stream()
                 .map(d -> d.getTopMarkers()).flatMap(List::stream).toList();
+
+        // Get this cluster's dto
         TopMarkerDto topMarkerDto = markerDtos.stream()
                 .filter(d -> d.getClusterId().equals(c.getId())).findFirst()
                 .orElseThrow(() -> new RuntimeException("Cluster markers not found for cluster: " + c.getId()));
+
+        // This cluster markers
         List<String> clusterMarkers = topMarkerDto.getTopMarkers();
+
         HeatmapCluster hc = new HeatmapCluster();
-        // TODO change how these are added
-        //hc.setId(new ObjectId());
+        hc.setCluster(c);
         hc.setTopMarkers(clusterMarkers);
+
         List<HeatmapClusterLoadDto> dtos = clusterDao.getMarkerExpressionsForCluster(c, resolutionMarkers);
         log.info("Finished loading cluster marker expressions");
+
+        // TODO Just select nBuckets cells to represent this cluster
         Map<String, Integer> bucketSizeMap = new HashMap<>();
         List<String> barcodes = dtos.stream().map(d -> d.getBarcode()).toList();
         Map<String, String> bucketMap = getBuckets(barcodes, nBuckets, bucketSizeMap);
@@ -103,9 +110,9 @@ public class ResolutionService {
             d.getExpressions().stream().forEach(dtoExp -> {
                 // TODO change this
                 Optional<HeatmapExpression> bucketExpOpt = null;
-                //Optional<HeatmapExpression> bucketExpOpt = heatmapExpressions.stream()
-                        //.filter(exp -> exp.getBucketId().equals(bucketMap.get(d.getBarcode())))
-                        //.filter(exp -> exp.getGeneCode().equals(dtoExp.getGeneCode())).findFirst();
+                // Optional<HeatmapExpression> bucketExpOpt = heatmapExpressions.stream()
+                // .filter(exp -> exp.getBucketId().equals(bucketMap.get(d.getBarcode())))
+                // .filter(exp -> exp.getGeneCode().equals(dtoExp.getGeneCode())).findFirst();
                 HeatmapExpression bucketExp;
                 if (bucketExpOpt.isPresent())
                     bucketExp = bucketExpOpt.get();
@@ -123,7 +130,7 @@ public class ResolutionService {
 
         // TODO change this
         // Add the heatmapCluster to its cluster
-        //c.setHeatmapClusterId(hc.getId());
+        // c.setHeatmapClusterId(hc.getId());
 
         return hc;
 

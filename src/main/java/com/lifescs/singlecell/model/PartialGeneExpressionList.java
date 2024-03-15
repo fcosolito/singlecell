@@ -19,7 +19,7 @@ public class PartialGeneExpressionList {
 
     @Id
     private String id;
-    @Indexed
+    @Field
     private String code;
     @DBRef
     private Experiment experiment;

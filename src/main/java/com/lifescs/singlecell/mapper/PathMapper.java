@@ -19,6 +19,8 @@ public class PathMapper {
     private String metadataPath;
     @Value("${test.markersFile}")
     private String markersPath;
+    @Value("${test.matrixCsvFile}")
+    private String matrixPath;
 
     public String subPathOfExperiment(Experiment e) {
         return e.getId() + "/";
@@ -48,4 +50,7 @@ public class PathMapper {
         return pathOfProject(p) + subPathOfExperiment(e) + markersPath;
     }
 
+    public String matrixPath(Project p, Experiment e) {
+        return pathOfProject(p) + subPathOfExperiment(e) + matrixPath;
+    }
 }

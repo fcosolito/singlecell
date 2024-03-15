@@ -8,8 +8,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CellCluster {
-    @DBRef
+    @DBRef(lazy = true)
     private Cluster cluster;
-    @DBRef
+    @DBRef(lazy = true)
     private Resolution resolution;
 }

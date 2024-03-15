@@ -9,7 +9,10 @@ geneCodes = ["Vcpip1", "Tram1", "Gata1", "Naaa"];
 db.getCollection("partialGeneExpressionList").aggregate([
     {
         $group: {
-          _id: "$geneExpressionListId",
+          _id: {
+            experiment: "$experiment",
+            code: "$code",
+          },
           expressions: {
             $push: "$expressions"
           }
@@ -17,7 +20,9 @@ db.getCollection("partialGeneExpressionList").aggregate([
     },
     {
       $project: {
-        _id:1,
+        _id:0,
+        experiment: "$_id.experiment",
+        code: "$_id.code",
         expressions: {
           $reduce: {
             input: "$expressions",
@@ -27,6 +32,15 @@ db.getCollection("partialGeneExpressionList").aggregate([
         }
       }
     },
+    {
+      $merge: {
+        into: 'geneExpressionList2',
+        on: ['experiment', 'code'],
+        whenMatched: 'fail',
+        whenNotMatched: 'insert'
+      }
+    },
+  ], {allowDiskUse:true})/*
     {
       $out: 'geneExpressionList2'
     }

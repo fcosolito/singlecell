@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
@@ -16,13 +14,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @Document("cell")
-@CompoundIndexes({
-        @CompoundIndex(name = "cell_to_experiment", def = "{'experiment.id' : 1}")
-})
 public class Cell {
     @Id
     private String id;
-    @DBRef
+    @DBRef(lazy = true)
     private Experiment experiment;
     @Field
     private Integer localId;

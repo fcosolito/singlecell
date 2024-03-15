@@ -2,12 +2,8 @@ package com.lifescs.singlecell.service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
-import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.dao.input.CellMetadataInputDao;
@@ -20,12 +16,8 @@ import com.lifescs.singlecell.dto.input.LoadedMetadataDto;
 import com.lifescs.singlecell.dto.input.MarkerGeneInputDto;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.CellCluster;
-import com.lifescs.singlecell.model.CellExpression;
-import com.lifescs.singlecell.model.CellExpressionList;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
-import com.lifescs.singlecell.model.GeneExpression;
-import com.lifescs.singlecell.model.GeneExpressionList;
 import com.lifescs.singlecell.model.MarkerGene;
 import com.lifescs.singlecell.model.Project;
 import com.lifescs.singlecell.model.Resolution;
@@ -34,9 +26,6 @@ import com.lifescs.singlecell.model.Sample;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Service
-@AllArgsConstructor
-@Slf4j
 // How to load experiment data:
 // Files must be stored inside a common directory named after the experiment id,
 // inside a directory
@@ -50,15 +39,20 @@ import lombok.extern.slf4j.Slf4j;
 // The loaded data can be saved to database between steps
 
 // Class for loading experiment data from files
+@Service
+@AllArgsConstructor
+@Slf4j
 public class ExperimentInputService {
     private GeneExpressionMatrixInputDao matrixDao;
     private CellMetadataInputDao metadataDao;
     private MarkerGeneInputDao markersDao;
     private ResolutionService resolutionService;
     private ExperimentService experimentService;
+    private GeneExpressionListDao geneExpressionListDao;
+    private CellExpressionListDao cellExpressionListDao;
 
     public void loadAndSaveExpressions(Project p, Experiment e) throws Exception {
-        matrixDao.readMatrix(p, e, 2000000L);
+        matrixDao.readMatrix(p, e, 500000L);
     }
 
     public void saveLoadedExperiment(Experiment e, LoadedMetadataDto dto) {
@@ -80,16 +74,15 @@ public class ExperimentInputService {
 
     }
 
-    // TODO
     public void fillExpressionLists(Experiment e) {
-        // cellExpressionListDao.fillExpressionList();
-        // geneExpressionListDao.fillExpressionList();
+        cellExpressionListDao.fillExpressionLists();
+        geneExpressionListDao.fillExpressionLists();
     }
 
-    // TODO return a dto with cells, samples, clusters, etc to save them
     // Loads cell objects into an experiment
     public LoadedMetadataDto loadCellsMetadata(Project p, Experiment experiment) throws Exception {
         log.info("Loading cells for experiment: " + experiment.getName());
+        experiment.setCells(new ArrayList<>());
         LoadedMetadataDto loadedDto = new LoadedMetadataDto();
         for (CellMetadataInputDto dto : metadataDao.readCSVToMetadataBeans(p, experiment)) {
             loadedDto.getCells().add(loadCellMetadata(dto, experiment, loadedDto.getSamples(),
@@ -101,7 +94,7 @@ public class ExperimentInputService {
     private Cell loadCellMetadata(CellMetadataInputDto dto, Experiment experiment, List<Sample> samples,
             List<Resolution> resolutions, List<Cluster> clusters) throws Exception {
         Cell cell = new Cell();
-        // cell.setId(experiment.getId() + dto.getId().toString());
+        cell.setExperiment(experiment);
         cell.setLocalId(dto.getId());
         cell.setCellNameHigh(dto.getCellNameHigh());
         cell.setCellNameLow(dto.getCellNameLow());
@@ -158,6 +151,7 @@ public class ExperimentInputService {
             cs.add(cc);
         }
         cell.setCellClusters(cs);
+        experiment.getCells().add(cell);
 
         return cell;
 

@@ -17,7 +17,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @Document
-@CompoundIndexes(@CompoundIndex(name = "experiment_code", def = "{'experiment.id' : 1, 'code' : 1}"))
+// Indexes must be created manually either with mongosh or mongo template
+// A compound unique index {experiment:1, code:1} is required to load
+// expressions
 public class GeneExpressionList {
     @Id
     private String id;

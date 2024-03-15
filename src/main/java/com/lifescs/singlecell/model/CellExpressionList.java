@@ -14,6 +14,8 @@ import lombok.Setter;
 @Document
 @Getter
 @Setter
+// Indexes must be created manually either with mongosh or mongo template
+// An index {cell:1} is required to load expressions
 public class CellExpressionList {
     @Id
     private String id;
