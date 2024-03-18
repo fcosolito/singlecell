@@ -40,26 +40,11 @@ public class ExpressionInputDao extends CsvDao<CellExpressionDto> {
     private CellExpressionListDao cellExpressionListDao;
     private GeneExpressionListDao geneExpressionListDao;
 
-    public CsvToBean<CellExpressionDto> getCsvToBean(Project p, Experiment e) throws IOException {
-        return getCsvToBean(Path.of(pathMapper.matrixPath(p, e)),
-                CellExpressionDto.class);
-    }
-
-    public CellExpressionDto readOne(Project p, Experiment e) throws IOException {
-        return readOne(Path.of(pathMapper.matrixPath(p, e)),
-                CellExpressionDto.class);
-    }
-
-    public List<CellExpressionDto> readCSVToMetadataBeans(Project p, Experiment e) throws IOException {
-        return readCSVToBeans(Path.of(pathMapper.matrixPath(p, e)),
-                CellExpressionDto.class);
-    }
-
     public void loadCellExpressions(Project p, Experiment e) throws IOException {
         Map<String, Cell> barcode2Cell = cellDao.findCellsByExperiment(e).stream()
         .collect(Collectors.toMap(cell -> cell.getBarcode(), cell -> cell));
 
-        try (Reader reader = Files.newBufferedReader(Path.of(pathMapper.matrixPath(p, e)))) {
+        try (Reader reader = Files.newBufferedReader(Path.of(pathMapper.cellMatrixPath(p, e)))) {
             CsvToBean<CellExpressionDto> cb = new CsvToBeanBuilder<CellExpressionDto>(reader)
                     .withType(CellExpressionDto.class)
                     .build();
@@ -77,9 +62,8 @@ public class ExpressionInputDao extends CsvDao<CellExpressionDto> {
                 expressionList.setType(new ExpressionType("gene"));
                 cellExpressionListDao.save(expressionList);
 
-
                 count++;
-                // Save to db
+                dto = null;
 
             }
             long end = System.nanoTime();
@@ -93,7 +77,7 @@ public class ExpressionInputDao extends CsvDao<CellExpressionDto> {
         Map<String, Cell> barcode2Cell = cellDao.findCellsByExperiment(e).stream()
         .collect(Collectors.toMap(cell -> cell.getBarcode(), cell -> cell));
 
-        try (Reader reader = Files.newBufferedReader(Path.of(pathMapper.matrixPath(p, e)))) {
+        try (Reader reader = Files.newBufferedReader(Path.of(pathMapper.geneMatrixPath(p, e)))) {
             CsvToBean<GeneExpressionDto> cb = new CsvToBeanBuilder<GeneExpressionDto>(reader)
                     .withType(GeneExpressionDto.class)
                     .build();
@@ -107,14 +91,12 @@ public class ExpressionInputDao extends CsvDao<CellExpressionDto> {
                 dto = i.next();
                 expressionList.setExpressions(dto.getExpressions().entries().stream().map(entry -> 
                 new GeneExpression(barcode2Cell.get(entry.getKey()), entry.getValue())).toList());
-                expressionList.setCode(dto.getCode());
+                expressionList.setCode(dto.getGenecode());
                 expressionList.setExperiment(e);
                 geneExpressionListDao.save(expressionList);
 
-
                 count++;
-                // Save to db
-
+                dto = null;
             }
             long end = System.nanoTime();
             log.info("Time getting gene expressions: " + (end - start) / 1_000_000_000.0 + " seconds");

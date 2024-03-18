@@ -9,48 +9,42 @@ import com.lifescs.singlecell.model.Project;
 @Component
 public class PathMapper {
 
-    @Value("${test.inputDirectory}")
-    private String projectsBaseDirectory;
-    @Value("${test.matrixFile}")
-    private String geneExpressionMatrixPath;
-    @Value("${test.geneMapFile}")
-    private String geneMappingPath;
-    @Value("${test.metadataFile}")
+    @Value("${singlecell.path.InputDirectory}")
+    private String inputDirectory;
+    @Value("${singlecell.path.MetadataFile}")
     private String metadataPath;
-    @Value("${test.markersFile}")
+    @Value("${singlecell.path.MarkersFile}")
     private String markersPath;
-    @Value("${test.matrixCsvFile}")
-    private String matrixPath;
+    @Value("${singlecell.path.CellMatrixFile}")
+    private String cellMatrixPath;
+    @Value("${singlecell.path.GeneMatrixFile}")
+    private String geneMatrixPath;
 
-    public String subPathOfExperiment(Experiment e) {
+    public String experimentSubPath(Experiment e) {
         return e.getId() + "/";
     }
 
-    public String pathOfProject(Project p) {
-        return projectsBaseDirectory + p.getId() + "/";
+    public String projectPath(Project p) {
+        return inputDirectory + p.getId() + "/";
     }
 
-    public String pathOfExperiment(Project p, Experiment e) {
-        return pathOfProject(p) + subPathOfExperiment(e);
-    }
-
-    public String geneExpressionMatrixPath(Project p, Experiment e) {
-        return pathOfProject(p) + subPathOfExperiment(e) + geneExpressionMatrixPath;
-    }
-
-    public String geneMapPath(Project p, Experiment e) {
-        return pathOfProject(p) + subPathOfExperiment(e) + geneMappingPath;
+    public String experimentPath(Project p, Experiment e) {
+        return projectPath(p) + experimentSubPath(e);
     }
 
     public String metadataPath(Project p, Experiment e) {
-        return pathOfProject(p) + subPathOfExperiment(e) + metadataPath;
+        return projectPath(p) + experimentSubPath(e) + metadataPath;
     }
 
     public String markersPath(Project p, Experiment e) {
-        return pathOfProject(p) + subPathOfExperiment(e) + markersPath;
+        return projectPath(p) + experimentSubPath(e) + markersPath;
     }
 
-    public String matrixPath(Project p, Experiment e) {
-        return pathOfProject(p) + subPathOfExperiment(e) + matrixPath;
+    public String cellMatrixPath(Project p, Experiment e) {
+        return projectPath(p) + experimentSubPath(e) + cellMatrixPath;
+    }
+
+    public String geneMatrixPath(Project p, Experiment e) {
+        return projectPath(p) + experimentSubPath(e) + geneMatrixPath;
     }
 }

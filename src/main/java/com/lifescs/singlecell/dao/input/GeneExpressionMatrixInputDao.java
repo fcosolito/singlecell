@@ -19,8 +19,6 @@ import com.lifescs.singlecell.dto.input.GeneMapDto;
 import com.lifescs.singlecell.mapper.PathMapper;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Project;
-import com.lifescs.singlecell.thread.SaveCellExpressions;
-import com.lifescs.singlecell.thread.SaveGeneExpressions;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +26,13 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @AllArgsConstructor
 @Slf4j
+// This is no longer used
 public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
     private GeneExpressionListDao geneExpressionListDao;
     private CellExpressionListDao cellExpressionListDao;
     private PathMapper pathMapper;
 
+  /*
     public void readMatrix(Project p, Experiment e, Long chunckSize) throws Exception {
         // Create an expression list for each cell in the experiment
         cellExpressionListDao.startExpressionLoad(e, readGeneMapping(p, e));
@@ -110,5 +110,6 @@ public class GeneExpressionMatrixInputDao extends CsvDao<GeneMapDto> {
         return geneList.stream()
                 .collect(Collectors.toMap(g -> g.getId(), g -> g.getCode()));
     }
+  */
 
 }

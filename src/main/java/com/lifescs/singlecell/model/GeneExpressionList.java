@@ -35,7 +35,7 @@ public class GeneExpressionList {
     }
 
     public GeneExpressionList(String id) {
-        this.geneExpressions = new ArrayList<>();
+        this.expressions = new ArrayList<>();
         this.id = id;
     }
 

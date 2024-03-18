@@ -84,6 +84,7 @@ public class GeneExpressionListDao {
         this.inputId2Cell = null;
     }
 
+  /*
     public void bulkSaveExpressions(Experiment esp, List<GeneExpressionDto> expressionList) {
         // bulk update
         Map<Integer, PartialGeneExpressionList> insertMap = new HashMap<>();
@@ -135,5 +136,6 @@ public class GeneExpressionListDao {
         mongoTemplate.aggregate(aggregation, "partialGeneExpressionList",
                 Document.class);
     }
+  */
 
 }

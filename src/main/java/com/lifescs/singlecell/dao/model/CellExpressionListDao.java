@@ -98,6 +98,7 @@ public class CellExpressionListDao {
                 this.inputId2Partial = null;
         }
 
+  /*
         public void bulkSaveExpressions(Experiment e, List<GeneExpressionDto> expressionList) {
                 // bulk update
                 Map<Integer, PartialCellExpressionList> insertMap = new HashMap<>();
@@ -150,4 +151,5 @@ public class CellExpressionListDao {
                 mongoTemplate.aggregate(aggregation, "partialCellExpressionList",
                                 Document.class);
         }
+  */
 }

@@ -14,7 +14,7 @@ import lombok.AllArgsConstructor;
 
 @Component
 @AllArgsConstructor
-public class MarkerGeneInputDao extends CsvDao {
+public class MarkerGeneInputDao extends CsvDao<MarkerGeneInputDto> {
     private PathMapper pathMapper;
 
     public List<MarkerGeneInputDto> readCSVToMetadataBeans(Project p, Experiment e) throws Exception {

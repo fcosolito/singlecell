@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 public class GeneExpressionDto extends CsvBean{
     @CsvBindByName(column = "genecode")
-    private String code;
+    private String genecode;
     @CsvBindAndJoinByName(column = ".*", elementType = Double.class)
     private MultiValuedMap<String, Double> expressions;
 }

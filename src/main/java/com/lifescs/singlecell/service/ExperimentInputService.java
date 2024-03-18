@@ -44,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class ExperimentInputService {
-    private GeneExpressionMatrixInputDao matrixDao;
     private CellMetadataInputDao metadataDao;
     private MarkerGeneInputDao markersDao;
     private ResolutionService resolutionService;
@@ -78,10 +77,6 @@ public class ExperimentInputService {
 
     }
 
-    public void fillExpressionLists(Experiment e) {
-        cellExpressionListDao.fillExpressionLists();
-        geneExpressionListDao.fillExpressionLists();
-    }
 
     // Loads cell objects into an experiment
     public LoadedMetadataDto loadCellsMetadata(Project p, Experiment experiment) throws Exception {

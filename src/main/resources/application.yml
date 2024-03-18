@@ -1,0 +1,23 @@
+spring:
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: singlecell
+
+logging:
+  level:
+    org:
+      springframework:
+        data:
+          mongodb:
+            core:
+              MongoTemplate: DEBUG
+
+singlecell:
+  path:
+    InputDirectory: /home/franco/LifeSCS/input_dir/
+    CellMatrixFile: cell_matrix.csv
+    GeneMatrixFile: gene_matrix.csv
+    MetadataFile: full_metadata.csv
+    MarkersFile: markers.csv
