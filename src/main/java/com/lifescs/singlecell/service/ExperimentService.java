@@ -18,30 +18,34 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 // Class to save and update experiment data
 public class ExperimentService {
-    private ExperimentDao experimentDao;
-    private CellDao cellDao;
-    private SampleDao sampleDao;
+  private ExperimentDao experimentDao;
+  private CellDao cellDao;
+  private SampleDao sampleDao;
 
-    // Saves the experiment object and the objects related with document references,
-    // does not save gene/protein/marker expressions
-    public Experiment saveExperiment(Experiment e) {
-        return experimentDao.saveExperiment(e);
-    }
+  // Saves the experiment object and the objects related with document references,
+  // does not save gene/protein/marker expressions
+  public Experiment saveExperiment(Experiment e) {
+    return experimentDao.saveExperiment(e);
+  }
 
-    public void deleteExperiment(Experiment e) {
-        experimentDao.deleteExperiment(e);
-    }
+  public void deleteExperiment(Experiment e) {
+    experimentDao.deleteExperiment(e);
+  }
 
-    public Optional<Experiment> findExperimentById(String string) {
-        return experimentDao.findExperimentById(string);
-    }
+  public void cleanDeletedExperiments(){
+    experimentDao.cleanDeletedExperiments();
+  }
 
-    public void saveSamples(List<Sample> samples) {
-        sampleDao.saveSamples(samples);
-    }
+  public Optional<Experiment> findExperimentById(String string) {
+    return experimentDao.findExperimentById(string);
+  }
 
-    public void saveCells(List<Cell> cells) {
-        cellDao.saveCells(cells);
-    }
+  public void saveSamples(List<Sample> samples) {
+    sampleDao.saveSamples(samples);
+  }
+
+  public void saveCells(List<Cell> cells) {
+    cellDao.saveCells(cells);
+  }
 
 }

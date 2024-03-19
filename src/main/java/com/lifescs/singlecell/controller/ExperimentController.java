@@ -40,4 +40,10 @@ public class ExperimentController {
         experimentService.deleteExperiment(aux);
     }
 
+    @CrossOrigin
+    @GetMapping("/experiment/clean")
+    public void cleanDeletedExperiments() {
+        experimentService.cleanDeletedExperiments();
+    }
+
 }

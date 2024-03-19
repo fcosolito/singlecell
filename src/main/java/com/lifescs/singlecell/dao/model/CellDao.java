@@ -12,7 +12,9 @@ import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.UnwindOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.model.Cell;
@@ -28,70 +30,83 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CellDao {
 
-    private MongoTemplate mongoTemplate;
-    private CellRepository cellRepository;
+  private MongoTemplate mongoTemplate;
+  private CellRepository cellRepository;
+  private CellExpressionListDao cellExpressionListDao;
 
-    public Optional<Cell> findCellById(String id) {
-        return cellRepository.findById(id);
+  public Optional<Cell> findCellById(String id) {
+    return cellRepository.findById(id);
+  }
+
+  public void saveCells(List<Cell> cl) {
+    cellRepository.saveAll(cl);
+  }
+
+  public void deleteCell(Cell cell) {
+    cellExpressionListDao.deleteListByCell(cell);
+    Query query = Query.query(Criteria.where("_id").is(cell.getId()));
+    mongoTemplate.updateFirst(query, Update.update("deleted", true), "cell");
+  }
+
+  public void deleteCellsByExperiment(Experiment e) {
+    findCellsByExperiment(e).stream().forEach(cell -> deleteCell(cell));
+    log.info("Deleted cells");
+  }
+
+  public List<Cell> findCellsByExperiment(Experiment e) {
+    log.info("Finding cells");
+    // Try to get cells from loaded experiment
+    List<Cell> cells;
+    if (e.getCells() != null)
+      cells = e.getCells();
+    else {
+      log.info("Executing query");
+      Query query = Query.query(Criteria.where("experiment.$id").is(e.getId()));
+      cells = mongoTemplate.find(query, Cell.class);
     }
 
-    public void saveCells(List<Cell> cl) {
-        cellRepository.saveAll(cl);
+    if (cells == null | cells.isEmpty())
+      throw new NoObjectFoundException("No cells for experiment: " + e.getId());
+    else {
+      e.setCells(cells);
+      return cells;
     }
+  }
 
-    public void deleteCellsByExperiment(Experiment e) {
-        Query query = Query.query(Criteria.where("experiment.$id").is(e.getId()));
-        mongoTemplate.remove(query, Cell.class);
-    }
+  public List<Cluster> getCellClusters(Cell c) throws NoObjectFoundException {
+    MatchOperation matchCell = Aggregation.match(Criteria.where("_id").is(c.getId()));
+    UnwindOperation unwindCluster = Aggregation.unwind("clusters");
+    UnwindOperation unwindClusterInfo = Aggregation.unwind("clusterInfo");
 
-    public List<Cell> findCellsByExperiment(Experiment e) {
-        log.info("Finding cells");
-        // Try to get cells from loaded experiment
-        List<Cell> cells;
-        if (e.getCells() != null)
-            cells = e.getCells();
-        else {
-            log.info("Executing query");
-            Query query = Query.query(Criteria.where("experiment.$id").is(e.getId()));
-            cells = mongoTemplate.find(query, Cell.class);
-        }
+    LookupOperation lookupCluster = LookupOperation.newLookup()
+        .from("cluster")
+        .localField("clusters")
+        .foreignField("_id")
+        .as("clusterInfo");
 
-        if (cells == null | cells.isEmpty())
-            throw new NoObjectFoundException("No cells for experiment: " + e.getId());
-        else {
-            e.setCells(cells);
-            return cells;
-        }
-    }
+    ProjectionOperation projectCluster = Aggregation.project("clusterInfo");
 
-    public List<Cluster> getCellClusters(Cell c) throws NoObjectFoundException {
-        MatchOperation matchCell = Aggregation.match(Criteria.where("_id").is(c.getId()));
-        UnwindOperation unwindCluster = Aggregation.unwind("clusters");
-        UnwindOperation unwindClusterInfo = Aggregation.unwind("clusterInfo");
+    Aggregation aggregation = Aggregation.newAggregation(
+        matchCell,
+        unwindCluster,
+        lookupCluster,
+        projectCluster,
+        unwindClusterInfo);
+    List<ClusterResult> result = mongoTemplate.aggregate(aggregation, "cell", ClusterResult.class)
+        .getMappedResults();
+    if (result.isEmpty())
+      throw new NoObjectFoundException("No cluster was found for cell with cell id: " + c.getId());
+    else
+      return result.stream().map(r -> r.cluster).toList();
+  }
 
-        LookupOperation lookupCluster = LookupOperation.newLookup()
-                .from("cluster")
-                .localField("clusters")
-                .foreignField("_id")
-                .as("clusterInfo");
+  class ClusterResult {
+    private Cluster cluster;
+  }
 
-        ProjectionOperation projectCluster = Aggregation.project("clusterInfo");
-
-        Aggregation aggregation = Aggregation.newAggregation(
-                matchCell,
-                unwindCluster,
-                lookupCluster,
-                projectCluster,
-                unwindClusterInfo);
-        List<ClusterResult> result = mongoTemplate.aggregate(aggregation, "cell", ClusterResult.class)
-                .getMappedResults();
-        if (result.isEmpty())
-            throw new NoObjectFoundException("No cluster was found for cell with cell id: " + c.getId());
-        else
-            return result.stream().map(r -> r.cluster).toList();
-    }
-
-    class ClusterResult {
-        private Cluster cluster;
-    }
+  public void clean() {
+    Query query = Query.query(Criteria.where("deleted").is(true));
+    mongoTemplate.remove(query, "cell");
+    cellExpressionListDao.clean();
+  }
 }
