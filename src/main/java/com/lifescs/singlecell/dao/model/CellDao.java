@@ -4,8 +4,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
 import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
+import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
@@ -108,5 +111,62 @@ public class CellDao {
     Query query = Query.query(Criteria.where("deleted").is(true));
     mongoTemplate.remove(query, "cell");
     cellExpressionListDao.clean();
+  }
+
+  public List<HeatmapClusterLoadDto> getMarkerExpressionsByCellIds(List<ObjectId> cellIds,
+      List<String> geneCodes)
+      throws NoObjectFoundException {
+
+    LookupOperation lookupCellExpressions = LookupOperation.newLookup()
+        .from("cellExpressionList")
+        .localField("_id")
+        .foreignField("cell.$id")
+        .as("expressionInfo");
+
+    MatchOperation matchCells = Aggregation.match(Criteria.where("_id")
+        .in(cellIds));
+
+    UnwindOperation unwindExpressions = Aggregation.unwind("expressionInfo");
+
+    ProjectionOperation projectBarcodeAndExpressions = Aggregation.project()
+        .and("barcode").as("barcode")
+        .and(ArrayOperators.Filter.filter("expressionInfo.expressions")
+            .as("expression")
+            .by(ArrayOperators.In.arrayOf(geneCodes)
+                .containsValue("$$expression.code")))
+        .as("expressions");
+
+    Aggregation aggregation = Aggregation.newAggregation(
+        matchCells,
+        lookupCellExpressions,
+        unwindExpressions,
+        projectBarcodeAndExpressions
+
+    );
+
+    List<HeatmapClusterLoadDto> result = mongoTemplate
+        .aggregate(aggregation, "cell", HeatmapClusterLoadDto.class)
+        .getMappedResults();
+    return result;
+  }
+
+  public List<ObjectId> getCellIdsByCluster(Cluster cluster) {
+    MatchOperation matchCells = Aggregation.match(Criteria.where("cellClusters")
+        .elemMatch(Criteria.where("cluster.$id").is(new ObjectId(cluster.getId()))));
+
+    ProjectionOperation projectIds = Aggregation.project("_id");
+
+    Aggregation aggregation = Aggregation.newAggregation(
+        matchCells,
+        projectIds);
+    List<ObjectId> result = mongoTemplate.aggregate(aggregation, "cell", CellId.class).getMappedResults().stream()
+        .map(cellId -> cellId.id).toList();
+    if (result.isEmpty())
+      throw new NoObjectFoundException("No cell ids for cluster: " + cluster.getName());
+    return result;
+  }
+
+  class CellId {
+    ObjectId id;
   }
 }

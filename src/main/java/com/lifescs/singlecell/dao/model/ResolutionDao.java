@@ -87,4 +87,8 @@ public class ResolutionDao {
     clusterDao.clean();
   }
 
+public Optional<Resolution> findResolutionByName(String name) {
+    return repository.findByName(name);
+}
+
 }

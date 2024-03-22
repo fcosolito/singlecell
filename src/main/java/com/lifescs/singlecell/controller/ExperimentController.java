@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.service.ExperimentService;
+import com.lifescs.singlecell.service.ResolutionService;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,35 +16,30 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class ExperimentController {
-    private ExperimentService experimentService;
+  private ExperimentService experimentService;
+  private ResolutionService resolutionService;
 
-    /*
-     * @CrossOrigin
-     * 
-     * @GetMapping("/experiment/save_heatmap_clusters")
-     * public void saveHeatmapClusters() throws Exception {
-     * Experiment e = experimentService.findExperimentById("exp1").get();
-     * List<HeatmapCluster> list = new ArrayList<>();
-     * for (Resolution r : e.getResolutions()) {
-     * list.addAll(experimentService.addHeatmapClustersForResolution(e, r, 20, 20));
-     * }
-     * experimentService.saveHeatmapClusters(list);
-     * experimentService.saveExperimentDeep(e);
-     * }
-     */
+  @CrossOrigin
+  @GetMapping("/experiment/{id}/saveHeatmapClusters")
+  public void saveHeatmapClusters(@PathVariable(name = "id") String experimentId) throws Exception {
+    Experiment e = experimentService.findExperimentById(experimentId).get();
+    resolutionService.findResolutionsByExperiment(e).stream()
+        .forEach(resolution -> resolutionService
+            .saveHeatmapClusters(resolutionService.addHeatmapClustersForResolution(e, resolution, 20, 20, false)));
+  }
 
-    @CrossOrigin
-    @GetMapping("/experiment/{id}/delete")
-    public void deleteExperiment(@PathVariable String id) {
-        Experiment aux = new Experiment(id);
-        aux.setId(id);
-        experimentService.deleteExperiment(aux);
-    }
+  @CrossOrigin
+  @GetMapping("/experiment/{id}/delete")
+  public void deleteExperiment(@PathVariable String id) {
+    Experiment aux = new Experiment(id);
+    aux.setId(id);
+    experimentService.deleteExperiment(aux);
+  }
 
-    @CrossOrigin
-    @GetMapping("/experiment/clean")
-    public void cleanDeletedExperiments() {
-        experimentService.cleanDeletedExperiments();
-    }
+  @CrossOrigin
+  @GetMapping("/experiment/clean")
+  public void cleanDeletedExperiments() {
+    experimentService.cleanDeletedExperiments();
+  }
 
 }

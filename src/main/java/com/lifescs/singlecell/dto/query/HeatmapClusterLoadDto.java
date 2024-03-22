@@ -2,7 +2,7 @@ package com.lifescs.singlecell.dto.query;
 
 import java.util.List;
 
-import com.lifescs.singlecell.model.GeneExpression;
+import com.lifescs.singlecell.model.CellExpression;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -11,5 +11,5 @@ import lombok.Setter;
 @Setter
 public class HeatmapClusterLoadDto {
     private String barcode;
-    private List<GeneExpression> expressions;
+    private List<CellExpression> expressions;
 }

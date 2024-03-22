@@ -29,6 +29,7 @@ public class HeatmapClusterDao {
   private MongoTemplate mongoTemplate;
 
   public void saveAll(List<HeatmapCluster> list) {
+    log.info("Saving heatmap clusters");
     repository.saveAll(list);
   }
 

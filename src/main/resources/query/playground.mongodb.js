@@ -1,23 +1,35 @@
 use("singlecell");
 
-cellId = "exp11"
 experimentId = "exp1"
-resolutionId = "exp1cluster_0.10"
-clusterId = ObjectId("65f83b724a88615d5c41735a")
+resolutionId = ObjectId("65fc35eb87c9af7b37edbfcf")
+clusterId = ObjectId("65fc35eb87c9af7b37edbfd9")
+cellIds = [ObjectId("65fc35eb87c9af7b37edc001"), ObjectId("65fc35eb87c9af7b37edc002"), ObjectId("65fc35eb87c9af7b37edc003")]
 numberOfMarkers = 5
-geneCodes = ["Vcpip1", "Tram1", "Gata1", "Naaa"];
-result = db.getCollection("geneExpressionList").aggregate([
+geneCodes = ["Vcpip1", "Tram1", "Gata1", "Naaa", "Casp1"]
+result = db.getCollection("cluster").aggregate([
     {
       $match: {
-        "experiment.$id": experimentId,
-        "code": { $in: geneCodes }
+        "resolution.$id": resolutionId
       }
     },
     {
+      $lookup: {
+        from: "heatmapCluster",
+        localField: "_id",
+        foreignField: "cluster.$id",
+        as: "heatmapInfo"
+        }
+    },
+    {
+      $unwind: "$heatmapInfo"
+    },
+    {
       $project: {
-        experimentId: "$experiment.$id",
-        code: "$code",
-        expressions:1
+      name:1,
+      //expr: "$expressionInfo.expressions",
+      expressions: "$heatmapInfo.expressions",
+      buckets: "$heatmapInfo.buckets",
+      markers: "$heatmapInfo.topMarkers",
         
       }
     }

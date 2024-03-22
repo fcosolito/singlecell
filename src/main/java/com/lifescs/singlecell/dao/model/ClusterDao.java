@@ -100,7 +100,7 @@ public class ClusterDao {
         .as("cellInfo");
 
     MatchOperation matchCluster = Aggregation.match(Criteria.where("cellInfo.cellClusters")
-        .elemMatch(Criteria.where("cluster.$id").is(c.getId())));
+        .elemMatch(Criteria.where("cluster.$id").is(new ObjectId(c.getId()))));
 
     ProjectionOperation projectBarcodeAndExpressions = Aggregation.project()
         .and("cellInfo.barcode").as("barcode")

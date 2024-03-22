@@ -16,7 +16,7 @@ public class HeatmapService {
   private HeatmapDao heatmapDao;
 
   public List<HeatmapDto> getHeatmapByResolution(Resolution resolution){
-    return heatmapDao.getHeatmapDtos(resolution);
+    return heatmapDao.getHeatmapDtos2(resolution);
   }
 
 }

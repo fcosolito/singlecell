@@ -1,14 +1,18 @@
 package com.lifescs.singlecell.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
+import com.lifescs.singlecell.dao.model.CellDao;
 import com.lifescs.singlecell.dao.model.ClusterDao;
 import com.lifescs.singlecell.dao.model.HeatmapClusterDao;
 import com.lifescs.singlecell.dao.model.ResolutionDao;
@@ -31,6 +35,7 @@ public class ResolutionService {
   private ResolutionDao resolutionDao;
   private HeatmapClusterDao heatmapClusterDao;
   private ClusterDao clusterDao;
+  private CellDao cellDao;
 
   public Optional<Resolution> findResolutionById(String resolutionId) {
     return resolutionDao.findResolutionById(resolutionId);
@@ -56,21 +61,79 @@ public class ResolutionService {
 
   // Create HeatmapClusters used to draw heatmaps
   public List<HeatmapCluster> addHeatmapClustersForResolution(Experiment e, Resolution r, Integer nBuckets,
-      Integer markersPerCluster)
+      Integer markersPerCluster, Boolean useAverage)
       throws NoObjectFoundException, RuntimeException {
+    log.info("Creating heatmap clusters for resolution: " + r.getName());
     List<TopMarkerDto> dtos = resolutionDao.getTopMarkers(r, markersPerCluster);
 
     List<HeatmapCluster> result = new ArrayList<>();
-    List<Cluster> clusters = clusterDao.findClustersByExperiment(e);
+    List<Cluster> clusters = clusterDao.findClustersByResolution(r);
 
-    for (Cluster c : clusters) {
-      result.add(addHeatmapCluster(c, dtos, nBuckets));
+    if (useAverage) {
+      for (Cluster c : clusters) {
+        result.add(addHeatmapClusterAverage(c, dtos, nBuckets));
+      }
+    } else {
+      for (Cluster c : clusters) {
+        result.add(addHeatmapClusterRandom(c, dtos, nBuckets));
+      }
     }
     return result;
   }
 
+  private HeatmapCluster addHeatmapClusterRandom(Cluster c, List<TopMarkerDto> markerDtos, Integer nBuckets) {
+    log.info("Creating heatmap cluster for cluster: " + c.getName());
+    // All the markers for the resolution
+    log.info("Marker dtos: " + markerDtos.stream().map(d -> d.getClusterId().toString()).toList().toString());
+    List<String> resolutionMarkers = markerDtos.stream()
+        .map(d -> d.getTopMarkers()).flatMap(List::stream).toList();
+
+    // Get this cluster's dto
+    TopMarkerDto topMarkerDto = markerDtos.stream()
+        .filter(d -> d.getClusterId().equals(c.getId())).findFirst()
+        .orElseThrow(() -> new RuntimeException("Cluster markers not found for cluster: " + c.getId()));
+
+    // This cluster markers
+    List<String> clusterMarkers = topMarkerDto.getTopMarkers();
+
+    HeatmapCluster hc = new HeatmapCluster();
+    hc.setCluster(c);
+    hc.setTopMarkers(clusterMarkers);
+
+    // This cluster's cell ids
+    List<ObjectId> cellIds = new ArrayList<>();
+    // The method returns an unmodifiable list
+    cellIds.addAll(cellDao.getCellIdsByCluster(c));
+    
+    // Select nBuckets random cell ids
+    List<ObjectId> selectedCellIds = new ArrayList<>();
+    Random random = new Random();
+    for (int i = 0; i < nBuckets; i++) {
+      int randomIndex = random.nextInt(cellIds.size());
+      selectedCellIds.add(cellIds.get(randomIndex));
+      cellIds.remove(randomIndex);
+    }
+
+    // Get marker expressions for the selected cells
+    // This could be sped up (maybe) by getting every expression for each selected cell
+    // and filtering genes using a map: check if gene code is in map for each expression
+    List<HeatmapClusterLoadDto> dtos = cellDao.getMarkerExpressionsByCellIds(selectedCellIds, resolutionMarkers);    
+    log.info("Finished loading cluster marker expressions");
+
+    // Fill heatmap cluster
+    dtos.stream().forEach(
+      dto -> {
+        hc.getBuckets().add(dto.getBarcode());
+        hc.getExpressions().addAll(dto.getExpressions().stream().map(
+          cellExpression -> new HeatmapExpression(dto.getBarcode(), cellExpression.getCode(), cellExpression.getExpression())).toList());
+        });
+    dtos = null;
+    return hc;
+
+  }
+
   // TODO Change to new model
-  private HeatmapCluster addHeatmapCluster(Cluster c, List<TopMarkerDto> markerDtos, Integer nBuckets)
+  private HeatmapCluster addHeatmapClusterAverage(Cluster c, List<TopMarkerDto> markerDtos, Integer nBuckets)
       throws NoObjectFoundException, RuntimeException {
     log.info("Getting heatmap cluster for " + c.getId());
 
@@ -93,7 +156,6 @@ public class ResolutionService {
     List<HeatmapClusterLoadDto> dtos = clusterDao.getMarkerExpressionsForCluster(c, resolutionMarkers);
     log.info("Finished loading cluster marker expressions");
 
-    // TODO Just select nBuckets cells to represent this cluster
     Map<String, Integer> bucketSizeMap = new HashMap<>();
     List<String> barcodes = dtos.stream().map(d -> d.getBarcode()).toList();
     Map<String, String> bucketMap = getBuckets(barcodes, nBuckets, bucketSizeMap);
@@ -103,7 +165,7 @@ public class ResolutionService {
     resolutionMarkers.stream()
         .forEach(m -> {
           bucketMap.values().stream().distinct().forEach(
-              b -> heatmapExpressions.add(new HeatmapExpression(b, m)));
+              b -> heatmapExpressions.add(new HeatmapExpression(b, m, 0.0)));
         });
     dtos.stream().forEach(d -> {
 
@@ -165,4 +227,9 @@ public class ResolutionService {
   public List<Resolution> findResolutionsByExperiment(Experiment experiment) {
     return resolutionDao.findResolutionsByExperiment(experiment);
   }
+
+public Optional<Resolution> findResolutionByName(String name) {
+    return resolutionDao.findResolutionByName(name);
+
+}
 }

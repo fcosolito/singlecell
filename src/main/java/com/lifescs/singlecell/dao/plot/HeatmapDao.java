@@ -60,26 +60,35 @@ public class HeatmapDao {
   }
 
   public List<HeatmapDto> getHeatmapDtos2(Resolution resolution){
-    LookupOperation lookupCluster = Aggregation.lookup(
-      "cluster",
-      "cluster.$id",
-      "_id",
-      "clusterInfo"
-    );
-
-    MatchOperation matchResolution = Aggregation.match(Criteria.where("clusterInfo.resolution.$id")
+    MatchOperation matchClusters = Aggregation.match(Criteria.where("resolution.$id")
       .is(new ObjectId(resolution.getId())));
 
+    LookupOperation lookupHeatmapClusters = Aggregation.lookup(
+      "heatmapCluster",
+      "_id",
+      "cluster.$id",
+      "heatmapInfo"
+    );
+
+    UnwindOperation unwindHeatmaps = Aggregation.unwind("heatmapInfo");
+
     // TODO
-    ProjectionOperation projectDtos = Aggregation.project();
+    ProjectionOperation projectDtos = Aggregation.project("name")
+    .and("heatmapInfo.topMarkers").as("markers")
+    .and("heatmapInfo.buckets").as("buckets")
+    .and("heatmapInfo.expressions").as("expressions");
 
     Aggregation aggregation = Aggregation.newAggregation(
-      lookupCluster,
-      matchResolution,
+      matchClusters,
+      lookupHeatmapClusters,
+      unwindHeatmaps,
       projectDtos
     );
-    List<HeatmapDto> result = mongoTemplate.aggregate(aggregation, "heatmapCluster", HeatmapDto.class).getMappedResults();
-    return result;
+    List<HeatmapDto> result = mongoTemplate.aggregate(aggregation, "cluster", HeatmapDto.class).getMappedResults();
+    if (result.isEmpty())
+      throw new NoObjectFoundException("No heatmap clusters found for resolution: " + resolution.getId());
+    else
+      return result;
   }
 
 }
