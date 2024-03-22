@@ -6,33 +6,49 @@ clusterId = ObjectId("65fc35eb87c9af7b37edbfd9")
 cellIds = [ObjectId("65fc35eb87c9af7b37edc001"), ObjectId("65fc35eb87c9af7b37edc002"), ObjectId("65fc35eb87c9af7b37edc003")]
 numberOfMarkers = 5
 geneCodes = ["Vcpip1", "Tram1", "Gata1", "Naaa", "Casp1"]
-result = db.getCollection("cluster").aggregate([
+result = db.getCollection("geneExpressionList").aggregate([
     {
       $match: {
-        "resolution.$id": resolutionId
+        "experiment.$id": experimentId,
+        "code": {
+          $in: geneCodes
       }
+      }
+    },
+    {
+      $unwind: "$expressions"
     },
     {
       $lookup: {
-        from: "heatmapCluster",
-        localField: "_id",
-        foreignField: "cluster.$id",
-        as: "heatmapInfo"
+        from: "cell",
+        localField: "expressions.cell.$id",
+        foreignField: "_id",
+        as: "cellInfo"
         }
     },
     {
-      $unwind: "$heatmapInfo"
-    },
-    {
       $project: {
-      name:1,
-      //expr: "$expressionInfo.expressions",
-      expressions: "$heatmapInfo.expressions",
-      buckets: "$heatmapInfo.buckets",
-      markers: "$heatmapInfo.topMarkers",
+      experiment:1,
+      code:1,
+      expression: "$expressions.expression",
+      barcode: "$cellInfo.barcode"
         
       }
+    },
+    {
+      $group: {
+        _id: {
+          experiment:"$experiment",
+          code: "$code"
+        },
+        expressions: {
+          $push: {
+            barcode: "$barcode",
+            expression: "$expression"
+          }
+        }
     }
+  }
     
   ])/*
 /* */
