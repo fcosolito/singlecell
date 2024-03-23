@@ -6,47 +6,55 @@ clusterId = ObjectId("65fc35eb87c9af7b37edbfd9")
 cellIds = [ObjectId("65fc35eb87c9af7b37edc001"), ObjectId("65fc35eb87c9af7b37edc002"), ObjectId("65fc35eb87c9af7b37edc003")]
 numberOfMarkers = 5
 geneCodes = ["Vcpip1", "Tram1", "Gata1", "Naaa", "Casp1"]
-result = db.getCollection("geneExpressionList").aggregate([
+result = db.getCollection("cell").aggregate([
     {
       $match: {
         "experiment.$id": experimentId,
-        "code": {
-          $in: geneCodes
-      }
       }
     },
+    { $unwind: "$cellClusters" },
     {
-      $unwind: "$expressions"
+      $match: {
+        "cellClusters.resolution.$id": resolutionId
+      }
     },
     {
       $lookup: {
-        from: "cell",
-        localField: "expressions.cell.$id",
+        from: "cluster",
+        localField: "cellClusters.cluster.$id",
         foreignField: "_id",
-        as: "cellInfo"
+        as: "clusterInfo"
         }
     },
+    { $unwind: "$clusterInfo" },
     {
       $project: {
-      experiment:1,
-      code:1,
-      expression: "$expressions.expression",
-      barcode: "$cellInfo.barcode"
-        
+      barcode:1,
+      spring1:1,
+      spring2:1,
+      pca1:1,
+      pca2:1,
+      tsne1:1,
+      tsne2:1,
+      umap1:1,
+      umap2:1,
+      cluster: "$clusterInfo.name",
       }
     },
     {
       $group: {
-        _id: {
-          experiment:"$experiment",
-          code: "$code"
-        },
-        expressions: {
-          $push: {
-            barcode: "$barcode",
-            expression: "$expression"
-          }
-        }
+        _id:null,
+        barcodes: { $push: "$barcode" },
+        spring1: { $push: "$spring1" },
+        spring2: { $push: "$spring2" },
+        umap1: { $push: "$umap1" },
+        umap2: { $push: "$umap2" },
+        tsne1: { $push: "$tsne1" },
+        tsne2: { $push: "$tsne2" },
+        pca1: { $push: "$pca1" },
+        pca2: { $push: "$pca2" },
+        clusters: { $push: "$cluster" },
+        cellCount: { $sum: 1 }
     }
   }
     

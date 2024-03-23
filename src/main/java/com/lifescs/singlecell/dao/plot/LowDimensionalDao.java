@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
@@ -37,88 +38,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LowDimensionalDao {
   private MongoTemplate mongoTemplate;
-  private CellDao cellDao;
 
-  class ExpressionSumResult {
-    private String id;
-    private Double sumOfExpressions;
-  }
-
-  public LowDimensionalDto getLowDimensionalDtoByGeneCodes(Experiment e, List<String> geneCodes) {
-    MatchOperation matchGenes = Aggregation.match(Criteria.where("experimentId").is(e.getId())
-        .and("geneCode").in(geneCodes));
-    UnwindOperation unwindExpressions = Aggregation.unwind("expressions");
-
-    GroupOperation groupByCell = Aggregation.group("expressions.cellId")
-        .sum("expressions.expression")
-        .as("sumOfExpressions");
-
-    Aggregation aggregation = Aggregation.newAggregation(
-        matchGenes,
-        unwindExpressions,
-        groupByCell);
-
-    List<ExpressionSumResult> expressionSums = mongoTemplate
-        .aggregate(aggregation, "cellExpressionList", ExpressionSumResult.class)
-        .getMappedResults();
-    if (expressionSums.isEmpty())
-      throw new NoObjectFoundException(
-          "Could not get expression sums for gene codes: " + geneCodes.toString());
-
-    LowDimensionalDto result = new LowDimensionalDto();
-
-    List<Cell> cells = cellDao.findCellsByExperiment(e);
-    Map<String, Double> expressionSumsMap = expressionSums.stream()
-        .collect(Collectors.toMap(es -> es.id, es -> es.sumOfExpressions));
-    cells.stream().forEach(cell -> {
-      Double expression = 0.0;
-      /*
-       * Optional<Double> expressionSumOpt = expressionSums.stream()
-       * .filter(c -> c.id.equals(cell.getId())).map(c -> c.sumOfExpressions)
-       * .findFirst();
-       * if (expressionSumOpt.isPresent())
-       * expression = expressionSumOpt.get() / geneCodes.size();
-       */
-      Double expOpt = expressionSumsMap.get(cell.getId());
-      if (expOpt != null)
-        expression = expOpt;
-
-      result.getBarcodes().add(cell.getBarcode());
-      result.getSpring1().add(cell.getSpring1());
-      result.getSpring2().add(cell.getSpring2());
-      result.getPca1().add(cell.getPca1());
-      result.getPca2().add(cell.getPca2());
-      result.getUmap1().add(cell.getUmap1());
-      result.getUmap2().add(cell.getUmap2());
-      result.getTsne1().add(cell.getTsne1());
-      result.getTsne2().add(cell.getTsne2());
-      result.getSamples().add(cell.getSample().getName());
-      result.getExpressionSum().add(expression);
-    });
-
-    return result;
-  }
-
-  public LowDimensionalDto getLowDimensionalDtoByResolution2(Experiment e, Resolution r) {
-    MatchOperation matchExperiment = Aggregation.match(Criteria.where("_id").is(e.getId()));
-    UnwindOperation unwindCells = Aggregation.unwind("$cells");
-    UnwindOperation unwindCellInfo = Aggregation.unwind("$cellInfo");
-    UnwindOperation unwindClusterInfo = Aggregation.unwind("$clusterInfo");
-
-    LookupOperation lookupCell = LookupOperation.newLookup()
-        .from("cell")
-        .localField("cells")
-        .foreignField("_id")
-        .as("cellInfo");
-
-    LookupOperation lookupCluster = LookupOperation.newLookup()
-        .from("cluster")
-        .localField("cellInfo.clusterIds")
-        .foreignField("_id")
-        .as("clusterInfo");
-
-    GroupOperation groupByExperiment = Aggregation.group("_id")
+  public LowDimensionalDto getDtoBySamples(Experiment e) {
+    MatchOperation matchCells = Aggregation.match(Criteria.where("experiment.$id").is(e.getId()));
+    LookupOperation lookupSample = Aggregation.lookup(
+        "sample",
+        "sample.$id",
+        "_id",
+        "sampleInfo");
+    ProjectionOperation projectMetadata = Aggregation.project(
+        "spring1", "spring2", "tsne1", "tsne2", "pca1", "pca2", "umap1", "umap2", "barcode")
+        .and("sampleInfo.name").as("sample");
+    GroupOperation groupByExperiment = Aggregation.group()
         .push("barcode").as("barcodes")
+        .push("sample").as("samples")
         .push("spring1").as("spring1")
         .push("spring2").as("spring2")
         .push("umap1").as("umap1")
@@ -126,49 +59,62 @@ public class LowDimensionalDao {
         .push("pca1").as("pca1")
         .push("pca2").as("pca2")
         .push("tsne1").as("tsne1")
-        .push("tsne2").as("tsne2")
-        .push("clusterInfo.name").as("clusterNames");
-
-    // ERROR: if the resolution or cluster selected is missing for some cells the
-    // whole dto would
-    // display wrong data or could make the frontend break. So the filter must
-    // always return an element
-    ProjectionOperation projectFilterCluster = Aggregation.project("_id")
-        .and("cellInfo.barcode").as("barcode")
-        .and("cellInfo.spring1").as("spring1")
-        .and("cellInfo.spring2").as("spring2")
-        .and("cellInfo.umap1").as("umap1")
-        .and("cellInfo.umap2").as("umap2")
-        .and("cellInfo.pca1").as("pca1")
-        .and("cellInfo.pca2").as("pca2")
-        .and("cellInfo.tsne1").as("tsne1")
-        .and("cellInfo.tsne2").as("tsne2")
-        .and(ArrayOperators.Filter.filter("clusterInfo")
-            .as("cluster")
-            .by(ComparisonOperators.Eq.valueOf("cluster.resolution")
-                .equalToValue(r.getId())))
-        .as("clusterInfo");
+        .push("tsne2").as("tsne2");
 
     Aggregation aggregation = Aggregation.newAggregation(
-        matchExperiment,
-        unwindCells,
-        lookupCell,
-        unwindCellInfo,
-        lookupCluster,
-        projectFilterCluster, // only one cluster per cell left
-        unwindClusterInfo,
-        groupByExperiment
-
+      matchCells,
+      lookupSample,
+      projectMetadata,
+      groupByExperiment
     );
-    List<LowDimensionalDto> result = mongoTemplate
-        .aggregate(aggregation, "experiment", LowDimensionalDto.class)
-        .getMappedResults();
-
-    return result.isEmpty() ? null : result.get(0);
-
+    return mongoTemplate.aggregate(aggregation, "cell", LowDimensionalDto.class).getUniqueMappedResult();
   }
 
-  public LowDimensionalDto getDtoByGenes(Experiment e, List<String> codes) {
+  public LowDimensionalDto getDtoByResolution(Experiment e, Resolution r){
+    MatchOperation matchExperiment = Aggregation.match(Criteria.where("experiment.$id").is(e.getId()));
+
+    UnwindOperation unwindCellClusters = Aggregation.unwind("cellClusters");
+
+    MatchOperation matchResolution = Aggregation.match(Criteria.where("cellClusters.resolution.$id").is(new ObjectId(r.getId())));
+    LookupOperation lookupCluster = Aggregation.lookup(
+      "cluster",
+      "cellClusters.cluster.$id",
+      "_id",
+      "clusterInfo"
+    );
+    UnwindOperation unwindCluster = Aggregation.unwind("clusterInfo");
+
+    ProjectionOperation projectMetadata = Aggregation.project(
+        "spring1", "spring2", "tsne1", "tsne2", "pca1", "pca2", "umap1", "umap2", "barcode")
+        .and("clusterInfo.name").as("cluster");
+
+    GroupOperation groupByExperiment = Aggregation.group()
+        .push("barcode").as("barcodes")
+        .push("cluster").as("clusters")
+        .push("spring1").as("spring1")
+        .push("spring2").as("spring2")
+        .push("umap1").as("umap1")
+        .push("umap2").as("umap2")
+        .push("pca1").as("pca1")
+        .push("pca2").as("pca2")
+        .push("tsne1").as("tsne1")
+        .push("tsne2").as("tsne2");
+
+    Aggregation aggregation = Aggregation.newAggregation(
+      matchExperiment,
+      unwindCellClusters,
+      matchResolution,
+      lookupCluster,
+      unwindCluster,
+      projectMetadata,
+      groupByExperiment
+    );
+    return mongoTemplate.aggregate(aggregation, "cell", LowDimensionalDto.class).getUniqueMappedResult();
+  }
+
+
+  // A map from cell barcodes to their sum of expressions for the passed codes
+  public Map<String, Double> getExpressionSumMap(Experiment e, List<String> codes) {
     MatchOperation matchGeneExpressions = Aggregation.match(Criteria.where("experiment.$id").is(e.getId())
         .and("code").in(codes));
 
@@ -197,38 +143,33 @@ public class LowDimensionalDao {
         groupByExperimentAndCode);
 
     long start = System.nanoTime();
-    List<ResultByGene> result = mongoTemplate.aggregate(aggregation, "geneExpressionList", ResultByGene.class).getMappedResults();
+    List<ResultByGene> result = mongoTemplate.aggregate(aggregation, "geneExpressionList", ResultByGene.class)
+        .getMappedResults();
     long end = System.nanoTime();
     log.info("Low dimensional query: " + (end - start) / 1_000_000_000.0 + " seconds");
 
-    Map<String, Double> barcode2expression = new HashMap<>();
+    Map<String, Double> barcode2expressionSum = new HashMap<>();
     result.stream().forEach(
-      r -> {
-        r.expressions.stream().forEach(
-          expression -> {
-            Double value = barcode2expression.get(expression.barcode);
-            if (value == null)
-              barcode2expression.put(expression.barcode, expression.expression);
-            else 
-              barcode2expression.put(expression.barcode, expression.expression + value);
-            });
-        }
-      );
-    LowDimensionalDto dto = new LowDimensionalDto();
-    Integer nOfGenes = codes.size();
-    for (Entry<String, Double> entry : barcode2expression.entrySet()){
-      dto.getBarcodes().add(entry.getKey());
-      dto.getExpressionSum().add(entry.getValue()/nOfGenes);
-    }
+        r -> {
+          r.expressions.stream().forEach(
+              expression -> {
+                Double value = barcode2expressionSum.get(expression.barcode);
+                if (value == null)
+                  barcode2expressionSum.put(expression.barcode, expression.expression);
+                else
+                  barcode2expressionSum.put(expression.barcode, expression.expression + value);
+              });
+        });
 
-    return dto;
+    return barcode2expressionSum;
 
   }
+
   class ResultByGene {
     String code;
     List<ResultExpression> expressions;
 
-    class ResultExpression{
+    class ResultExpression {
       String barcode;
       Double expression;
     }

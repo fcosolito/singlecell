@@ -19,8 +19,8 @@ public class LowDimensionalDto {
     private List<Double> tsne1;
     private List<Double> tsne2;
     private List<String> samples;
-    private List<String> clusterNames;
-    private List<Double> expressionSum;
+    private List<String> clusters;
+    private List<Double> expressionAvg;
 
     public LowDimensionalDto() {
         this.barcodes = new ArrayList<>();
@@ -33,8 +33,8 @@ public class LowDimensionalDto {
         this.tsne1 = new ArrayList<>();
         this.tsne2 = new ArrayList<>();
         this.samples = new ArrayList<>();
-        this.clusterNames = new ArrayList<>();
-        this.expressionSum = new ArrayList<>();
+        this.clusters = new ArrayList<>();
+        this.expressionAvg = new ArrayList<>();
     }
 
 }
