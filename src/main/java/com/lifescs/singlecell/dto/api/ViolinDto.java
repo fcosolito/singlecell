@@ -11,11 +11,12 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ViolinDto {
-    private String clusterId;
-    private String sampleId;
-    private List<GeneExpression> expressions;
+  private String cluster;
+  private String sample;
+  private String code;
+  private List<Double> expressions;
 
-    public ViolinDto() {
-        this.expressions = new ArrayList<>();
-    }
+  public ViolinDto() {
+    this.expressions = new ArrayList<>();
+  }
 }

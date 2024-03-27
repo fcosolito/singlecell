@@ -14,49 +14,48 @@ result = db.getCollection("cell").aggregate([
     },
     { $unwind: "$cellClusters" },
     {
-      $match: {
-        "cellClusters.resolution.$id": resolutionId
+      $group: {
+        _id: "$cellClusters.cluster",
+        resolution: { $first: "$cellClusters.resolution" },
+        cellCount: { $sum: 1 }
       }
     },
     {
       $lookup: {
         from: "cluster",
-        localField: "cellClusters.cluster.$id",
+        localField: "_id.$id",
         foreignField: "_id",
         as: "clusterInfo"
         }
     },
     { $unwind: "$clusterInfo" },
     {
-      $project: {
-      barcode:1,
-      spring1:1,
-      spring2:1,
-      pca1:1,
-      pca2:1,
-      tsne1:1,
-      tsne2:1,
-      umap1:1,
-      umap2:1,
-      cluster: "$clusterInfo.name",
+      $group: {
+        _id: {
+          resolution: "$resolution",
+          cluster: "$clusterInfo.name",
+        },
+        cellCount: { $sum: "$cellCount" }
       }
     },
     {
-      $group: {
-        _id:null,
-        barcodes: { $push: "$barcode" },
-        spring1: { $push: "$spring1" },
-        spring2: { $push: "$spring2" },
-        umap1: { $push: "$umap1" },
-        umap2: { $push: "$umap2" },
-        tsne1: { $push: "$tsne1" },
-        tsne2: { $push: "$tsne2" },
-        pca1: { $push: "$pca1" },
-        pca2: { $push: "$pca2" },
-        clusters: { $push: "$cluster" },
-        cellCount: { $sum: 1 }
+      $lookup: {
+        from: "resolution",
+        localField: "_id.resolution.$id",
+        foreignField: "_id",
+        as: "resolutionInfo"
+        }
+    },
+    { $unwind: "$resolutionInfo" },
+    {
+      $project: {
+        resolution: "$resolutionInfo.name",
+        cluster: "$_id.cluster",
+        cellCount:1,
+        _id:0
+
+      }
     }
-  }
     
   ])/*
 /* */
