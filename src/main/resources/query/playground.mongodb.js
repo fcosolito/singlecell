@@ -14,49 +14,34 @@ result = db.getCollection("cell").aggregate([
     },
     { $unwind: "$cellClusters" },
     {
-      $group: {
-        _id: "$cellClusters.cluster",
-        resolution: { $first: "$cellClusters.resolution" },
-        cellCount: { $sum: 1 }
+      $match: {
+        "cellClusters.resolution.$id": resolutionId
       }
     },
-    {
-      $lookup: {
-        from: "cluster",
-        localField: "_id.$id",
-        foreignField: "_id",
-        as: "clusterInfo"
-        }
-    },
-    { $unwind: "$clusterInfo" },
     {
       $group: {
         _id: {
-          resolution: "$resolution",
-          cluster: "$clusterInfo.name",
+          sample: "$sample.$id",
+          cluster: "$cellClusters.cluster.$id",
         },
-        cellCount: { $sum: "$cellCount" }
+        // change this
+        resolution: { $first: "$cellClusters.resolution.$id" },
+        cells: { $push: "$_id" },
+        //cellCount: { $sum: 1 },
       }
     },
-    {
-      $lookup: {
-        from: "resolution",
-        localField: "_id.resolution.$id",
-        foreignField: "_id",
-        as: "resolutionInfo"
-        }
-    },
-    { $unwind: "$resolutionInfo" },
     {
       $project: {
-        resolution: "$resolutionInfo.name",
+        sample: "$_id.sample",
         cluster: "$_id.cluster",
-        cellCount:1,
-        _id:0
-
+        resolution: 1,
+        cells: 1,
       }
-    }
+    },
+    //{ $out: "violinGroups" },
+
+
     
-  ])/*
+  ], {allowDiskUse: true})/*
 /* */
 print(result);

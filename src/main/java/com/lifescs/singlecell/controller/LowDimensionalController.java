@@ -29,12 +29,9 @@ public class LowDimensionalController {
 
   @CrossOrigin(origins = "http://localhost:3000")
   @GetMapping("/experiment/{id}/plots/lowDimensional/byGenes")
-  public LowDimensionalDto getDtoByGenes(@PathVariable(name = "id") String experimentId) {
+  public LowDimensionalDto getDtoByGenes(@PathVariable(name = "id") String experimentId,
+    @PathVariable(name = "genes") List<String> geneCodes) {
     Experiment e = experimentService.findExperimentById(experimentId).get();
-    List<String> geneCodes = new ArrayList<>();
-    geneCodes.add("Naaa");
-    geneCodes.add("Vcpip1");
-    geneCodes.add("Tram1");
 
     return lowDimensionalService.getLowDimensionalByGene(e, geneCodes);
   }

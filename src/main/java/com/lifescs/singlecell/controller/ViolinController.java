@@ -29,13 +29,12 @@ public class ViolinController {
 
   @CrossOrigin(origins = "http://localhost:3000")
   @GetMapping("/experiment/{id}/plots/violin/byResolution")
-  public List<ViolinDto> getDtoByResolution(@PathVariable(name = "id") String experimentId, @RequestParam(name = "res") String resolutionName) {
+  public List<ViolinDto> getDtoByResolution(@PathVariable(name = "id") String experimentId, 
+    @RequestParam(name = "res") String resolutionName,
+    @RequestParam(name = "genes") List<String> codes) {
     log.info("Received violin plot request for experiment: " + experimentId + ", resolution: " + resolutionName);
     Experiment experiment = experimentService.findExperimentById(experimentId).get();
     Resolution resolution = resolutionService.findResolutionByName(resolutionName).get();
-    List<String> codes = new ArrayList<>();
-    codes.add("Naaa");
-    codes.add("Vcpip1");
     return violinService.getDtosByResolution(experiment, codes, resolution);
   }
 

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dao.model.CellDao;
 import com.lifescs.singlecell.dao.model.ClusterDao;
+import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
 import com.lifescs.singlecell.dao.model.HeatmapClusterDao;
 import com.lifescs.singlecell.dao.model.ResolutionDao;
 import com.lifescs.singlecell.dto.api.HeatmapDto;
@@ -21,9 +22,11 @@ import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
 import com.lifescs.singlecell.dto.query.TopMarkerDto;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.GeneExpressionList;
 import com.lifescs.singlecell.model.HeatmapCluster;
 import com.lifescs.singlecell.model.HeatmapExpression;
 import com.lifescs.singlecell.model.Resolution;
+import com.lifescs.singlecell.model.ViolinGroup;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +39,7 @@ public class ResolutionService {
   private HeatmapClusterDao heatmapClusterDao;
   private ClusterDao clusterDao;
   private CellDao cellDao;
+  private GeneExpressionListDao geneExpressionListDao;
 
   public Optional<Resolution> findResolutionById(String resolutionId) {
     return resolutionDao.findResolutionById(resolutionId);
@@ -57,6 +61,32 @@ public class ResolutionService {
 
   public void saveClusters(List<Cluster> clusters) {
     clusterDao.saveClusters(clusters);
+  }
+
+  // Create ViolinGroups used to draw violin plots
+  public List<ViolinGroup> addViolinGroupsForResolution(Experiment e, Resolution r){
+    // Create cell to base group map
+    // a base group does not set the gene code, so a new one must be created for each 
+    // expression list proccessed, for each base group
+    Map<ObjectId, ViolinGroup> cellId2BaseGroup = new HashMap<>();
+    cellDao.getViolinGroupLoadDtos(e, r).stream().forEach(dto -> {
+      ViolinGroup group = new ViolinGroup();
+      group.setSampleId(dto.getSample());
+      group.setClusterId(dto.getCluster());
+      group.setResolutionId(dto.getResolution());
+      dto.getCells().stream().forEach(cell -> cellId2BaseGroup.put(cell, group));
+    });
+    // Get a list of the codes to be loaded
+    geneExpressionListDao.findCodesForExperiment(e).stream()
+      .forEach(code -> {
+        GeneExpressionList gel = geneExpressionListDao.findExpressionListByCode(e, code);
+        ViolinGroup baseGroup = cellId2BaseGroup.get();
+        ViolinGroup violinGroup = new ViolinGroup();
+        violinGroup.setSampleId();
+        violinGroup.setClusterId(dto.getCluster());
+        violinGroup.setResolutionId(dto.getResolution());
+      });
+    // for each gene expression, load it, append its expressions to the violin groups, then load the next
   }
 
   // Create HeatmapClusters used to draw heatmaps

@@ -20,9 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.lifescs.singlecell.Exceptions.NoObjectFoundException;
 import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
+import com.lifescs.singlecell.dto.query.ViolinGroupLoadDto;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.repository.CellRepository;
 
 import lombok.AllArgsConstructor;
@@ -168,5 +170,10 @@ public class CellDao {
 
   class CellId {
     ObjectId id;
+  }
+
+  // TODO
+  public List<ViolinGroupLoadDto> getViolinGroupLoadDtos(Experiment e, Resolution r) {
+    return null;
   }
 }

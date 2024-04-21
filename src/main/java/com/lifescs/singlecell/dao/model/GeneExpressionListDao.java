@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
@@ -15,6 +16,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
 import org.springframework.data.mongodb.core.aggregation.ArrayOperators;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.MergeOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.aggregation.MergeOperation.WhenDocumentsDontMatch;
@@ -31,6 +33,7 @@ import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.GeneExpression;
 import com.lifescs.singlecell.model.GeneExpressionList;
 import com.lifescs.singlecell.model.PartialGeneExpressionList;
+import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.repository.GeneExpressionListRepository;
 
 import lombok.AllArgsConstructor;
@@ -89,6 +92,23 @@ public class GeneExpressionListDao {
 public void clean() {
     Query query = Query.query(Criteria.where("deleted").is(true));
     mongoTemplate.remove(query, "geneExpressionList");
+}
+
+public List<String> findCodesForExperiment(Experiment e) {
+    MatchOperation matchLists = Aggregation.match(Criteria.where("experiment.$id").is(e.getId()));
+    ProjectionOperation projectCodes = Aggregation.project("code");
+    Aggregation aggregation = Aggregation.newAggregation(
+      matchLists,
+      projectCodes
+    );
+    List<String> codes = mongoTemplate.aggregate(aggregation, "geneExpressionList", String.class).getMappedResults();
+    log.info("codes for experiment: " + codes.toString());
+    return codes;
+}
+
+public GeneExpressionList findExpressionListByCode(Experiment e, String code) {
+    Query query = Query.query(Criteria.where("experiment.$id").is(e.getId()).and("code").is(code));
+    return mongoTemplate.findOne(query, GeneExpressionList.class);
 }
 
   /*
