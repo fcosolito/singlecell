@@ -139,61 +139,39 @@ public class ViolinDao {
   }
 
   public List<ViolinDto> getDtosByResolution(Experiment e, List<String> codes, Resolution r) {
-    MatchOperation matchExpressions = Aggregation.match(Criteria.where("experiment.$id").is(e.getId())
+    MatchOperation matchExpressions = Aggregation.match(Criteria.where("resolutionId").is(new ObjectId(r.getId()))
         .and("code").in(codes));
-    UnwindOperation unwindExpressions = Aggregation.unwind("expressions");
-    AggregationOperation customLookupOperation = new AggregationOperation() {
-      @Override
-      public Document toDocument(AggregationOperationContext context) {
-        return new Document(
-            "$lookup",
-            new Document("from", "cell")
-                .append("localField", "expressions.cell.$id")
-                .append("foreignField", "_id")
-                .append("pipeline", Arrays.<Object>asList(
-                    new Document("$unwind", "$cellClusters"),
+    LookupOperation lookupCluster = Aggregation.lookup(
+      "cluster",
+      "clusterId",
+      "_id",
+      "clusterInfo"
+    );
 
-                    new Document("$match", new Document("cellClusters.resolution.$id", new ObjectId(r.getId()))),
+    LookupOperation lookupSample = Aggregation.lookup(
+      "sample",
+      "sampleId",
+      "_id",
+      "sampleInfo"
+    );
 
-                    new Document("$lookup", new Document("from", "cluster")
-                        .append("localField", "cellClusters.cluster.$id")
-                        .append("foreignField", "_id")
-                        .append("as", "clusterInfo")),
+    UnwindOperation unwindCluster = Aggregation.unwind("clusterInfo");
+    UnwindOperation unwindSample = Aggregation.unwind("sampleInfo");
 
-                    new Document("$unwind", "$clusterInfo"),
-
-                    new Document("$lookup", new Document("from", "sample")
-                        .append("localField", "sample.$id")
-                        .append("foreignField", "_id")
-                        .append("as", "sampleInfo")),
-
-                    new Document("$unwind", "$sampleInfo"),
-
-                    new Document("$project", new Document("_id", 1)
-                        .append("sample", "$sampleInfo.name")
-                        .append("cluster", "$clusterInfo.name"))))
-                .append("as", "cellInfo"));
-      }
-    };
-    UnwindOperation unwindCellInfo = Aggregation.unwind("cellInfo");
-    GroupOperation groupBySampleGeneAndCluster = Aggregation.group("cellInfo.sample", "cellInfo.cluster", "code")
-      .push("expressions.expression").as("expressions");
-    ProjectionOperation project = Aggregation.project("expressions")
-    .and("_id.code").as("code")
-    .and("_id.sample").as("sample")
-    .and("_id.cluster").as("cluster")
-    .andExclude("_id");
+   ProjectionOperation project = Aggregation.project("expressions", "code")
+    .and("sampleInfo.name").as("sample")
+    .and("clusterInfo.name").as("cluster");
 
     Aggregation aggregation = Aggregation.newAggregation(
       matchExpressions,
-      unwindExpressions,
-      customLookupOperation,
-      unwindCellInfo,
-      groupBySampleGeneAndCluster,
+      lookupCluster,
+      lookupSample,
+      unwindCluster,
+      unwindSample,
       project
     );
 
-    return mongoTemplate.aggregate(aggregation, "geneExpressionList", ViolinDto.class).getMappedResults();
+    return mongoTemplate.aggregate(aggregation, "violinGroup", ViolinDto.class).getMappedResults();
   }
 
 }

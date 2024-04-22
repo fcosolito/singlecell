@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.service.ExperimentService;
 import com.lifescs.singlecell.service.ResolutionService;
 
@@ -27,6 +28,15 @@ public class ExperimentController {
         .forEach(resolution -> resolutionService
             .saveHeatmapClusters(resolutionService.addHeatmapClustersForResolution(e, resolution, 20, 20, false)));
   }
+
+  @CrossOrigin
+  @GetMapping("/experiment/{id}/saveViolinGroups")
+  public void saveViolinGroups(@PathVariable(name = "id") String experimentId) throws Exception {
+    Experiment e = experimentService.findExperimentById(experimentId).get();
+    Resolution testResolution = resolutionService.findResolutionsByExperiment(e).get(3);
+    resolutionService.saveViolinGroups(resolutionService.addViolinGroupsForResolution(e, testResolution));
+  }
+
 
   @CrossOrigin
   @GetMapping("/experiment/{id}/delete")

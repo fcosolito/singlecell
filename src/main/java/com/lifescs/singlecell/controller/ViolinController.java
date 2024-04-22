@@ -27,7 +27,7 @@ public class ViolinController {
   private ResolutionService resolutionService;
   private ExperimentService experimentService;
 
-  @CrossOrigin(origins = "http://localhost:3000")
+  //@CrossOrigin(origins = "http://localhost:3000")
   @GetMapping("/experiment/{id}/plots/violin/byResolution")
   public List<ViolinDto> getDtoByResolution(@PathVariable(name = "id") String experimentId, 
     @RequestParam(name = "res") String resolutionName,
@@ -35,7 +35,9 @@ public class ViolinController {
     log.info("Received violin plot request for experiment: " + experimentId + ", resolution: " + resolutionName);
     Experiment experiment = experimentService.findExperimentById(experimentId).get();
     Resolution resolution = resolutionService.findResolutionByName(resolutionName).get();
-    return violinService.getDtosByResolution(experiment, codes, resolution);
+    List<ViolinDto> dtos = violinService.getDtosByResolution(experiment, codes, resolution);
+    log.info("Size: " + dtos.size());
+    return dtos;
   }
 
 }

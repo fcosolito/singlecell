@@ -101,9 +101,12 @@ public List<String> findCodesForExperiment(Experiment e) {
       matchLists,
       projectCodes
     );
-    List<String> codes = mongoTemplate.aggregate(aggregation, "geneExpressionList", String.class).getMappedResults();
-    log.info("codes for experiment: " + codes.toString());
+    List<String> codes = mongoTemplate.aggregate(aggregation, "geneExpressionList", CodeResult.class)
+      .getMappedResults().stream().map(code -> code.code).toList();
     return codes;
+}
+class CodeResult {
+    String code;
 }
 
 public GeneExpressionList findExpressionListByCode(Experiment e, String code) {

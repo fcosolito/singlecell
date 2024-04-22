@@ -149,6 +149,30 @@ let collections = [
         ]
 
     },
+{
+        name: "violinGroup",
+        indexes: [
+            {
+                name: "code_1",
+                keys: {
+                    "code":1
+                },
+                options: {
+
+                }
+            },
+            {
+                name: "resolution_1",
+                keys: {
+                    "resolutionId":1
+                },
+                options: {
+
+                }
+            }
+        ]
+
+    }
 ]
 
 for (collection of collections){

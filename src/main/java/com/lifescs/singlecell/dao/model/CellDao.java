@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -24,6 +25,7 @@ import com.lifescs.singlecell.dto.query.ViolinGroupLoadDto;
 import com.lifescs.singlecell.model.Cell;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.Project;
 import com.lifescs.singlecell.model.Resolution;
 import com.lifescs.singlecell.repository.CellRepository;
 
@@ -172,8 +174,26 @@ public class CellDao {
     ObjectId id;
   }
 
-  // TODO
   public List<ViolinGroupLoadDto> getViolinGroupLoadDtos(Experiment e, Resolution r) {
-    return null;
+    MatchOperation matchExperiment = Aggregation.match(Criteria.where("experiment.$id").is(e.getId()));
+    UnwindOperation unwindCellClusters = Aggregation.unwind("cellClusters");
+    MatchOperation matchResolution = Aggregation.match(Criteria.where("cellClusters.resolution.$id").is(new ObjectId(r.getId())));
+    ProjectionOperation project = Aggregation.project()
+    .and("_id").as("cell")
+    .andExpression("cellClusters.cluster.$id").as("cluster")
+    .andExpression("sample.$id").as("sample");
+
+    Aggregation aggregation = Aggregation.newAggregation(
+      matchExperiment,
+      unwindCellClusters,
+      matchResolution,
+      project 
+    );
+
+    List<ViolinGroupLoadDto> result = mongoTemplate.aggregate(aggregation, "cell", ViolinGroupLoadDto.class).getMappedResults();
+    Document docs = mongoTemplate.aggregate(aggregation, "cell", ViolinGroupLoadDto.class).getRawResults();
+    //log.info("Documents: " + docs);
+    //log.info("Load dtos: " + result.stream());
+    return result;
   }
 }

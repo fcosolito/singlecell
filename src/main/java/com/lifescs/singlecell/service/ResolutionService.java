@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,14 @@ import com.lifescs.singlecell.dao.model.ClusterDao;
 import com.lifescs.singlecell.dao.model.GeneExpressionListDao;
 import com.lifescs.singlecell.dao.model.HeatmapClusterDao;
 import com.lifescs.singlecell.dao.model.ResolutionDao;
+import com.lifescs.singlecell.dao.model.ViolinGroupDao;
 import com.lifescs.singlecell.dto.api.HeatmapDto;
 import com.lifescs.singlecell.dto.query.HeatmapClusterLoadDto;
 import com.lifescs.singlecell.dto.query.TopMarkerDto;
+import com.lifescs.singlecell.dto.query.ViolinGroupLoadDto;
 import com.lifescs.singlecell.model.Cluster;
 import com.lifescs.singlecell.model.Experiment;
+import com.lifescs.singlecell.model.GeneExpression;
 import com.lifescs.singlecell.model.GeneExpressionList;
 import com.lifescs.singlecell.model.HeatmapCluster;
 import com.lifescs.singlecell.model.HeatmapExpression;
@@ -40,6 +45,7 @@ public class ResolutionService {
   private ClusterDao clusterDao;
   private CellDao cellDao;
   private GeneExpressionListDao geneExpressionListDao;
+  private ViolinGroupDao violinGroupDao;
 
   public Optional<Resolution> findResolutionById(String resolutionId) {
     return resolutionDao.findResolutionById(resolutionId);
@@ -63,30 +69,71 @@ public class ResolutionService {
     clusterDao.saveClusters(clusters);
   }
 
+  public void saveViolinGroups(List<ViolinGroup> groups){
+    violinGroupDao.saveAll(groups);
+  }
+
   // Create ViolinGroups used to draw violin plots
   public List<ViolinGroup> addViolinGroupsForResolution(Experiment e, Resolution r){
+    log.info("Creating violin groups for resolution: " + r.getName());
+    List<ViolinGroup> result = new ArrayList<>();
     // Create cell to base group map
     // a base group does not set the gene code, so a new one must be created for each 
     // expression list proccessed, for each base group
-    Map<ObjectId, ViolinGroup> cellId2BaseGroup = new HashMap<>();
-    cellDao.getViolinGroupLoadDtos(e, r).stream().forEach(dto -> {
-      ViolinGroup group = new ViolinGroup();
-      group.setSampleId(dto.getSample());
-      group.setClusterId(dto.getCluster());
-      group.setResolutionId(dto.getResolution());
-      dto.getCells().stream().forEach(cell -> cellId2BaseGroup.put(cell, group));
-    });
+    Map<ObjectId, Integer> cellId2BaseGroupId = new HashMap<>();
+    Map<Integer, ViolinGroup> baseGroupMap = new HashMap<>();
+    Integer baseGroupCount = 0;
+
+    log.info("Dtos: " + cellDao.getViolinGroupLoadDtos(e, r).stream().map(d -> (d.getCell().toString() + " sample " + d.getSample().toString())).toList().toString());
+    for (ViolinGroupLoadDto dto : cellDao.getViolinGroupLoadDtos(e, r)){
+      // Find existing group
+      Integer groupId = null;
+      for (Entry<Integer, ViolinGroup> entry : baseGroupMap.entrySet()){
+        if (entry.getValue().getSampleId().equals(dto.getSample())
+          && entry.getValue().getClusterId().equals(dto.getCluster())){
+          groupId = entry.getKey();
+        }
+      }
+      // Create group if it does not exist already
+      if (groupId == null){
+        groupId = baseGroupCount;
+        ViolinGroup group = new ViolinGroup();
+        group.setSampleId(dto.getSample()); group.setClusterId(dto.getCluster());
+        group.setResolutionId(new ObjectId(r.getId()));
+        baseGroupMap.put(groupId, group);
+        baseGroupCount++;
+      }
+      cellId2BaseGroupId.put(dto.getCell(), groupId);
+    }
+
     // Get a list of the codes to be loaded
-    geneExpressionListDao.findCodesForExperiment(e).stream()
-      .forEach(code -> {
+    Map<Integer, ViolinGroup> baseGroupMapWithGene = null;
+    for (String code : geneExpressionListDao.findCodesForExperiment(e).stream().limit(8).toList()){
+        log.info("Creating violin groups for gene code: " + code);
+        baseGroupMapWithGene = new HashMap<>();
         GeneExpressionList gel = geneExpressionListDao.findExpressionListByCode(e, code);
-        ViolinGroup baseGroup = cellId2BaseGroup.get();
-        ViolinGroup violinGroup = new ViolinGroup();
-        violinGroup.setSampleId();
-        violinGroup.setClusterId(dto.getCluster());
-        violinGroup.setResolutionId(dto.getResolution());
-      });
-    // for each gene expression, load it, append its expressions to the violin groups, then load the next
+        for (Entry<Integer, ViolinGroup> entry : baseGroupMap.entrySet()){
+          ViolinGroup group = new ViolinGroup();
+          group.setSampleId(entry.getValue().getSampleId());
+          group.setClusterId(entry.getValue().getClusterId());
+          group.setResolutionId(entry.getValue().getResolutionId());
+          group.setCode(code);
+          baseGroupMapWithGene.put(entry.getKey(), group);
+        }
+        // for each gene expression, load it, append its expressions to the violin groups, then load the next
+        for (GeneExpression expression : gel.getExpressions()){
+          ObjectId cellId = new ObjectId(expression.getCell().getId());
+          ViolinGroup violinGroup = baseGroupMapWithGene
+          .get(cellId2BaseGroupId.get(cellId));
+          violinGroup.getExpressions().add(expression.getExpression());
+        }
+        // TODO If having the whole list on memory is too expensive: 
+        //violinGroupDao.saveAll(baseGroupMapWithGene.values().stream().collect(Collectors.toList()));
+        result.addAll(baseGroupMapWithGene.values());
+        baseGroupMapWithGene = null;
+        gel = null;
+      }
+    return result;
   }
 
   // Create HeatmapClusters used to draw heatmaps
