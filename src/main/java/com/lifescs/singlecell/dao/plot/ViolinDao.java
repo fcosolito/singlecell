@@ -1,5 +1,6 @@
 package com.lifescs.singlecell.dao.plot;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -22,6 +23,7 @@ import com.lifescs.singlecell.dto.api.ViolinDto;
 import com.lifescs.singlecell.dto.query.ViolinQueryDto;
 import com.lifescs.singlecell.model.Experiment;
 import com.lifescs.singlecell.model.Resolution;
+import com.lifescs.singlecell.service.ResolutionService;
 import com.mongodb.BasicDBObject;
 
 import lombok.AllArgsConstructor;
@@ -30,6 +32,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ViolinDao {
   private MongoTemplate mongoTemplate;
+  private ResolutionService resolutionService;
 
   public List<ViolinDto> getViolinDtos(Experiment e, Resolution r, List<String> geneCodes) {
     MatchOperation matchCellExpression = Aggregation.match(Criteria.where("experimentId").is(e.getId())
@@ -171,7 +174,8 @@ public class ViolinDao {
       project
     );
 
-    return mongoTemplate.aggregate(aggregation, "violinGroup", ViolinDto.class).getMappedResults();
+    List<ViolinDto> result = mongoTemplate.aggregate(aggregation, "violinGroup", ViolinDto.class).getMappedResults();
+    return result;
   }
 
 }
