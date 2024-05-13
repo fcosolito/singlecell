@@ -27,7 +27,7 @@ public class ViolinController {
   private ResolutionService resolutionService;
   private ExperimentService experimentService;
 
-  //@CrossOrigin(origins = "http://localhost:3000")
+  @CrossOrigin
   @GetMapping("/experiment/{id}/plots/violin/byResolution")
   public List<ViolinDto> getDtoByResolution(@PathVariable(name = "id") String experimentId, 
     @RequestParam(name = "res") String resolutionName,

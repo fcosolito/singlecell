@@ -26,7 +26,7 @@ public class HeatmapController {
   private ResolutionService resolutionService;
   private ExperimentService experimentService;
 
-  @CrossOrigin(origins = "http://localhost:3000")
+  @CrossOrigin
   @GetMapping("/experiment/{id}/plots/heatmap")
   public List<HeatmapDto> getDtoByResolution(@PathVariable(name = "id") String experimentId, @RequestParam(name = "res") String resolutionName) {
     log.info("Received heatmap request for experiment: " + experimentId + ", resolution: " + resolutionName);

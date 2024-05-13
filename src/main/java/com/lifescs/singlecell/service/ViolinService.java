@@ -31,8 +31,10 @@ public class ViolinService {
     }
     List<ViolinGroup> generated = resolutionService.addViolinGroupsForResolution(e, r, codesNotFound);
     resolutionService.saveViolinGroups(generated);
-    found.addAll(violinDao.getDtosByResolution(e, codesNotFound, r));
-    return found;
+    List<ViolinDto> result = new ArrayList<>();
+    result.addAll(found);
+    result.addAll(violinDao.getDtosByResolution(e, codesNotFound, r));
+    return result;
     
   }
 }
